@@ -39,9 +39,8 @@ export const Header = () => {
               target="_blank"
             >
               <SparklesIcon />
-              Ink'D
+              Ink'D In Memoriez
             </Link>
-            Image Generator
           </h1>
         </div>
       </div>

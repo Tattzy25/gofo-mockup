@@ -29,8 +29,6 @@ interface ModelSelectProps {
   onChange: (value: string, providerKey: ProviderKey) => void;
   iconPath: string;
   color: string;
-  enabled?: boolean;
-  onToggle?: (enabled: boolean) => void;
   image: string | null | undefined;
   timing?: ProviderTiming;
   failed?: boolean;
@@ -57,7 +55,6 @@ export function ModelSelect({
   value,
   providerKey,
   onChange,
-  enabled = true,
   image,
   timing,
   failed,
@@ -67,7 +64,7 @@ export function ModelSelect({
 
   return (
     <Card
-      className={cn(`w-full transition-opacity`, enabled ? "" : "opacity-50")}
+      className={cn(`w-full transition-opacity`)}
     >
       <CardContent className="pt-6 h-full">
         <div className="flex items-center justify-between gap-2 mb-4">
