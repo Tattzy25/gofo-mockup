@@ -92,20 +92,23 @@ export function ImageGenerator({
         />
       </div>
 
-      {/* Desktop layout: Grid */}
+      {/* Desktop layout: Fixed 2x2 grid of 4 slots (placeholders) */}
       <div className="hidden sm:grid sm:grid-cols-2 2xl:grid-cols-4 gap-6">
-        {PROVIDER_ORDER.map((provider) => {
-          const imageItem = images.find((img) => img.provider === provider);
+        {[0, 1, 2, 3].map((slot) => {
+          const imageItem = images[slot];
+          const providerKey = imageItem?.provider as ProviderKey | undefined;
           const imageData = imageItem?.image;
-          const timing = timings[provider];
+          const timing = providerKey ? timings[providerKey] : undefined;
+          const failed = providerKey ? failedProviders.includes(providerKey) : false;
+          const enabled = providerKey ? enabledProviders[providerKey] : true;
           return (
             <ImageDisplay
-              key={provider}
-              provider={provider}
+              key={`slot-${slot}`}
+              provider={providerKey ?? `slot-${slot}`}
               image={imageData}
               timing={timing}
-              failed={failedProviders.includes(provider)}
-              enabled={enabledProviders[provider]}
+              failed={failed}
+              enabled={enabled}
               modelId={imageItem?.modelId ?? ""}
             />
           );

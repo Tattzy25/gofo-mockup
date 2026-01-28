@@ -7,6 +7,10 @@ interface StyleCarouselProps {
   visible?: boolean;
   images?: string[]; // dynamic list of style image URLs
   onSelect?: (url: string) => void;
+  /** Optional externally-controlled selected image URL */
+  selected?: string | null;
+  /** Optional class applied to a selected item (consumer may style via data-selected instead) */
+  selectedClassName?: string;
   emptyMessage?: string;
 }
 
@@ -14,8 +18,11 @@ export function StyleCarousel({
   visible = false,
   images,
   onSelect,
+  selected,
+  selectedClassName,
   emptyMessage,
 }: Readonly<StyleCarouselProps>) {
+  const [internalSelected, setInternalSelected] = React.useState<string | null>(null);
   const [hiddenMap, setHiddenMap] = React.useState<Record<string, boolean>>({});
 
   if (!visible) return null;
@@ -56,12 +63,27 @@ export function StyleCarousel({
 
             const label = getLabel(src);
 
+            const selectedSrc = selected ?? internalSelected;
+
+            const handleClick = () => {
+              setInternalSelected(src);
+              onSelect?.(src);
+            };
+
+            // We intentionally do NOT hard-code the visual highlight here.
+            // Consumers can style via the `data-selected="true"` attribute or pass `selectedClassName`.
+            const isSelected = selectedSrc === src;
+
             return (
               <button
                 key={src}
-                onClick={() => onSelect?.(src)}
+                onClick={handleClick}
                 aria-label={`Select style ${idx + 1}`}
-                className="flex-shrink-0 bg-muted rounded-lg overflow-hidden border border-transparent hover:border-gray-300"
+                data-selected={isSelected ? "true" : undefined}
+                className={
+                  "flex-shrink-0 bg-muted rounded-lg overflow-hidden border border-transparent hover:border-gray-300" +
+                  (isSelected && selectedClassName ? ` ${selectedClassName}` : "")
+                }
               >
                 <div className="w-32 aspect-[4/5] relative">
                   <Image

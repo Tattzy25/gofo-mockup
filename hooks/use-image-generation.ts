@@ -43,14 +43,17 @@ export function useImageGeneration(): UseImageGenerationReturn {
     setActivePrompt(prompt);
     try {
       setIsLoading(true);
-      // Initialize images array with null values
-      setImages(
-        providers.map((provider) => ({
+      // Initialize a fixed number of result slots (2) with null images
+      const NUM_SLOTS = 2;
+      const initialImages: ImageResult[] = Array.from({ length: NUM_SLOTS }).map((_, i) => {
+        const provider = providers[i % providers.length];
+        return {
           provider,
           image: null,
           modelId: providerToModel[provider],
-        })),
-      );
+        } as ImageResult;
+      });
+      setImages(initialImages);
 
       // Clear previous state
       setErrors([]);
@@ -64,11 +67,11 @@ export function useImageGeneration(): UseImageGenerationReturn {
         ) as Record<ProviderKey, ProviderTiming>,
       );
 
-      // Helper to fetch a single provider
-      const generateImage = async (provider: ProviderKey, modelId: string) => {
-        const startTime = now;
+      // Helper to fetch a single slot (may reuse providers if fewer providers than slots)
+      const generateImage = async (slotIndex: number, provider: ProviderKey, modelId: string) => {
+        const startTime = Date.now();
         console.log(
-          `Generate image request [provider=${provider}, modelId=${modelId}]`,
+          `Generate image request [slot=${slotIndex}, provider=${provider}, modelId=${modelId}]`,
         );
         try {
           const request = {
@@ -102,17 +105,15 @@ export function useImageGeneration(): UseImageGenerationReturn {
             `Successful image response [provider=${provider}, modelId=${modelId}, elapsed=${elapsed}ms]`,
           );
 
-          // Update image in state
+          // Update the specific slot in state
           setImages((prevImages) =>
-            prevImages.map((item) =>
-              item.provider === provider
-                ? { ...item, image: data.image ?? null, modelId }
-                : item,
+            prevImages.map((item, idx) =>
+              idx === slotIndex ? { ...item, image: data.image ?? null, modelId } : item,
             ),
           );
         } catch (err) {
           console.error(
-            `Error [provider=${provider}, modelId=${modelId}]:`,
+            `Error [slot=${slotIndex}, provider=${provider}, modelId=${modelId}]:`,
             err,
           );
           setFailedProviders((prev) => [...prev, provider]);
@@ -127,21 +128,22 @@ export function useImageGeneration(): UseImageGenerationReturn {
             },
           ]);
 
+          // Mark the slot as failed (image remains null)
           setImages((prevImages) =>
-            prevImages.map((item) =>
-              item.provider === provider
-                ? { ...item, image: null, modelId }
-                : item,
+            prevImages.map((item, idx) =>
+              idx === slotIndex ? { ...item, image: null, modelId } : item,
             ),
           );
         }
       };
 
-      // Generate images for all active providers
-      const fetchPromises = providers.map((provider) => {
+      // Generate images for a fixed set of slots, distributing providers across slots
+      const fetchPromises: Promise<void>[] = [];
+      for (let slot = 0; slot < NUM_SLOTS; slot++) {
+        const provider = providers[slot % providers.length];
         const modelId = providerToModel[provider];
-        return generateImage(provider, modelId);
-      });
+        fetchPromises.push(generateImage(slot, provider, modelId));
+      }
 
       await Promise.all(fetchPromises);
     } catch (error) {

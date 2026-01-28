@@ -1,8 +1,6 @@
 import { Card, CardContent } from "@/components/ui/card";
 import { imageHelpers } from "@/lib/image-helpers";
-import {
-  ReplicateIcon,
-} from "@/lib/logos";
+import { ReplicateIcon } from "@/lib/logos";
 import { ProviderKey } from "@/lib/provider-config";
 import { cn } from "@/lib/utils";
 import {
@@ -27,6 +25,7 @@ interface ModelSelectProps {
   iconPath: string;
   color: string;
   image: string | null | undefined;
+  image2?: string | null | undefined;
   timing?: ProviderTiming;
   failed?: boolean;
   modelId: string;
@@ -47,6 +46,7 @@ export function ModelSelect({
   providerKey,
   onChange,
   image,
+  image2,
   timing,
   failed,
   modelId,
@@ -54,9 +54,7 @@ export function ModelSelect({
   const Icon = PROVIDER_ICONS[providerKey];
 
   return (
-    <Card
-      className={cn(`w-full transition-opacity`)}
-    >
+    <Card className={cn(`w-full transition-opacity`)}>
       <CardContent className="pt-6 h-full">
         <div className="flex items-center justify-between gap-2 mb-4">
           <div className="flex items-center gap-2 w-full transition-opacity duration-200">
@@ -75,64 +73,80 @@ export function ModelSelect({
               </Link>
             </div>
             <div className="flex flex-col w-full">
-              <Link
-                className="hover:opacity-80"
-                href={
-                  "https://sdk.vercel.ai/providers/ai-sdk-providers/" +
-                  PROVIDER_LINKS[providerKey]
-                }
-                target="_blank"
-              >
-                <h3 className="font-semibold text-lg">{label}</h3>
-              </Link>
-              <div className="flex justify-between items-center w-full">
-                <Select
-                  defaultValue={value}
-                  value={value}
-                  onValueChange={(selectedValue) =>
-                    onChange(selectedValue, providerKey)
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder={value || "Select a model"} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectGroup>
-                      {models.map((model) => (
-                        <SelectItem key={model} value={model} className="">
-                          <span className="hidden xl:inline">
-                            {imageHelpers.formatModelId(model).length > 30
-                              ? imageHelpers.formatModelId(model).slice(0, 30) +
-                                "..."
-                              : imageHelpers.formatModelId(model)}
-                          </span>
-                          <span className="hidden lg:inline xl:hidden">
-                            {imageHelpers.formatModelId(model).length > 20
-                              ? imageHelpers.formatModelId(model).slice(0, 20) +
-                                "..."
-                              : imageHelpers.formatModelId(model)}
-                          </span>
+              {/* Hide the provider label and model select UI for replicate to match the requested compact layout */}
+              {providerKey !== "replicate" && (
+                <>
+                  <Link
+                    className="hover:opacity-80"
+                    href={
+                      "https://sdk.vercel.ai/providers/ai-sdk-providers/" +
+                      PROVIDER_LINKS[providerKey]
+                    }
+                    target="_blank"
+                  >
+                    <h3 className="font-semibold text-lg">{label}</h3>
+                  </Link>
+                  <div className="flex justify-between items-center w-full">
+                    <Select
+                      defaultValue={value}
+                      value={value}
+                      onValueChange={(selectedValue) =>
+                        onChange(selectedValue, providerKey)
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={value || "Select a model"} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectGroup>
+                          {models.map((model) => (
+                            <SelectItem key={model} value={model} className="">
+                              <span className="hidden xl:inline">
+                                {imageHelpers.formatModelId(model).length > 30
+                                  ? imageHelpers
+                                      .formatModelId(model)
+                                      .slice(0, 30) + "..."
+                                  : imageHelpers.formatModelId(model)}
+                              </span>
+                              <span className="hidden lg:inline xl:hidden">
+                                {imageHelpers.formatModelId(model).length > 20
+                                  ? imageHelpers
+                                      .formatModelId(model)
+                                      .slice(0, 20) + "..."
+                                  : imageHelpers.formatModelId(model)}
+                              </span>
 
-                          <span className="lg:hidden">
-                            {imageHelpers.formatModelId(model)}
-                          </span>
-                        </SelectItem>
-                      ))}
-                    </SelectGroup>
-                  </SelectContent>
-                </Select>
-              </div>
+                              <span className="lg:hidden">
+                                {imageHelpers.formatModelId(model)}
+                              </span>
+                            </SelectItem>
+                          ))}
+                        </SelectGroup>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
 
-        <ImageDisplay
-          modelId={modelId}
-          provider={providerKey}
-          image={image}
-          timing={timing}
-          failed={failed}
-        />
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <ImageDisplay
+            modelId={modelId}
+            provider={providerKey}
+            image={image}
+            timing={timing}
+            failed={failed}
+          />
+          <ImageDisplay
+            modelId={modelId}
+            provider={providerKey}
+            image={image2}
+            timing={timing}
+            failed={failed}
+          />
+        </div>
       </CardContent>
     </Card>
   );

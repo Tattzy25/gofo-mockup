@@ -117,14 +117,16 @@ export function ImagePlayground({}: {}) {
             setSelectedStyle(url);
           }}
         />
+
         <>
           {(() => {
             const getModelProps = () =>
               (Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
                 const provider = PROVIDERS[key];
-                const imageItem = images.find((img) => img.provider === key);
-                const imageData = imageItem?.image;
-                const modelId = imageItem?.modelId ?? "N/A";
+                const providerImages = images.filter((img) => img.provider === key);
+                const imageData = providerImages[0]?.image;
+                const imageData2 = providerImages[1]?.image;
+                const modelId = providerImages[0]?.modelId ?? "N/A";
                 const timing = timings[key];
 
                 return {
@@ -137,6 +139,7 @@ export function ImagePlayground({}: {}) {
                   iconPath: provider.iconPath,
                   color: provider.color,
                   image: imageData,
+                  image2: imageData2,
                   modelId,
                   timing,
                   failed: failedProviders.includes(key),

@@ -23,14 +23,15 @@ interface ImageCarouselProps {
   providerToModel: Record<ProviderKey, string>;
 }
 
-export function ImageCarousel({
-  providers,
-  images,
-  timings,
-  failedProviders,
-  enabledProviders,
-  providerToModel,
-}: ImageCarouselProps) {
+export function ImageCarousel(props: Readonly<ImageCarouselProps>) {
+  const {
+    providers,
+    images,
+    timings,
+    failedProviders,
+    enabledProviders,
+    providerToModel,
+  } = props;
   const [currentSlide, setCurrentSlide] = useState(0);
   const [api, setApi] = useState<CarouselApi>();
 
@@ -80,9 +81,9 @@ export function ImageCarousel({
       {/* Dot Indicators */}
       <div className="absolute -bottom-6 left-0 right-0">
         <div className="flex justify-center gap-1">
-          {providers.map((_, index) => (
+          {providers.map((provider, index) => (
             <button
-              key={index}
+              key={provider}
               className={cn(
                 "h-1.5 rounded-full transition-all",
                 index === currentSlide
