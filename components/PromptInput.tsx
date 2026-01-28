@@ -3,7 +3,7 @@ import { ArrowUp } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ModeToggle } from "@/components/ModeToggle";
-import { TattooStyles } from "@/components/Tattoo Styles/tattoo_styles";
+import { TattooStyles } from "@/components/Tattoo-Styles/styles";
 import { TattooColors } from "@/components/Tattoo Colors/tattoo_colors";
 import { TattooAspectRatio } from "@/components/Tattoo Aspect Ratio/tattoo_aspect_ratio";
 // TattooPlacements removed from choices
