@@ -7,8 +7,8 @@ interface StyleCarouselProps {
   visible?: boolean;
   images?: string[]; // dynamic list of style image URLs
   onSelect?: (url: string) => void;
-  /** Optional externally-controlled selected image URL */
-  selected?: string | null;
+  /** Optional externally-controlled selected image URL(s) */
+  selected?: string | string[] | null;
   /** Optional class applied to a selected item (consumer may style via data-selected instead) */
   selectedClassName?: string;
   emptyMessage?: string;
@@ -90,7 +90,9 @@ export function StyleCarousel({
 
             // We intentionally do NOT hard-code the visual highlight here.
             // Consumers can style via the `data-selected="true"` attribute or pass `selectedClassName`.
-            const isSelected = selectedSrc === src;
+            const isSelected = Array.isArray(selectedSrc)
+              ? selectedSrc.includes(src)
+              : selectedSrc === src;
 
             return (
               <button

@@ -4,12 +4,13 @@ import { Button } from "@/components/ui/button";
 
 interface VibeCheckProps {
   onClick?: () => void;
+  isActive?: boolean;
 }
 
-export function VibeCheck({ onClick }: Readonly<VibeCheckProps>) {
+export function VibeCheck({ onClick, isActive }: Readonly<VibeCheckProps>) {
   return (
     <Button
-      variant="default"
+      variant={isActive ? "default" : "ghost"}
       size="default"
       className="rounded-full"
       onClick={onClick}

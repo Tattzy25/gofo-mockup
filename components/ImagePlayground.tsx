@@ -2,10 +2,13 @@
 
 import { useState } from "react";
 import { useEffect } from "react";
+import { AnimatePresence, motion } from "framer-motion";
 import { ModelSelect } from "@/components/ModelSelect";
 import { PromptInput } from "@/components/PromptInput";
 import { StyleCarousel } from "@/components/StyleCarousel";
+import { PlaygroundControls } from "@/components/PlaygroundControls/PlaygroundControls";
 import { ModelCardCarousel } from "@/components/ModelCardCarousel";
+import { CustomStyleInput } from "@/components/CustomStyleInput/CustomStyleInput";
 import {
   MODEL_CONFIGS,
   PROVIDERS,
@@ -39,16 +42,20 @@ export function ImagePlayground({}: {}) {
     setShowProviders((prev) => !prev);
   };
 
-  const [showStyles, setShowStyles] = useState(false);
+  const [activeCarousel, setActiveCarousel] = useState<"style" | "vibe">("style");
   const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
+  const [selectedColor, setSelectedColor] = useState<string | null>(null);
+  const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
+  const [customStyle, setCustomStyle] = useState<string | null>(null);
+  const [customColor, setCustomColor] = useState<string | null>(null);
   const [styleImages, setStyleImages] = useState<string[]>([]);
   const [stylesLoading, setStylesLoading] = useState(false);
-  const [showVibe, setShowVibe] = useState(false);
 
   const vibeImages: string[] = [
     // Colors first
     "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/BLACK_WHITE.png?v=1769632094",
     "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/COLORFUL.png?v=1769632094",
+    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/CUSTOM.png?v=1769726194",
     // Visual divider card
     "__divider__",
     // Aspect ratios
@@ -60,7 +67,6 @@ export function ImagePlayground({}: {}) {
   useEffect(() => {
     let mounted = true;
     const load = async () => {
-      if (!showStyles) return;
       setStylesLoading(true);
       try {
         const module = await import("@/lib/style-images");
@@ -78,7 +84,7 @@ export function ImagePlayground({}: {}) {
     return () => {
       mounted = false;
     };
-  }, [showStyles]);
+  }, []);
 
   const handleModeChange = (newMode: ModelMode) => {
     setMode(newMode);
@@ -104,7 +110,28 @@ export function ImagePlayground({}: {}) {
   const handlePromptSubmit = (newPrompt: string) => {
     const activeProviders = PROVIDER_ORDER.filter((p) => enabledProviders[p]);
     if (activeProviders.length > 0) {
-      startGeneration(newPrompt, activeProviders, providerToModel);
+      // Append style tag if selected, but only for the API call
+      let finalPrompt = newPrompt;
+      if (selectedStyle) {
+        if (selectedStyle.includes("CUSTOM")) {
+          if (customStyle) {
+            finalPrompt += ` [style:${customStyle}]`;
+          }
+        } else {
+          finalPrompt += ` [style:${selectedStyle}]`;
+        }
+      }
+
+      if (selectedColor) {
+        if (selectedColor.includes("CUSTOM")) {
+          if (customColor) {
+            finalPrompt += ` [color:${customColor}]`;
+          }
+        } else {
+          finalPrompt += ` [color:${selectedColor}]`;
+        }
+      }
+      startGeneration(finalPrompt, activeProviders, providerToModel);
     }
     setShowProviders(false);
   };
@@ -116,25 +143,73 @@ export function ImagePlayground({}: {}) {
         <PromptInput
           onSubmit={handlePromptSubmit}
           isLoading={isLoading}
-          showProviders={showProviders}
-          onToggleProviders={toggleView}
+          selectedStyle={
+             selectedStyle?.includes("CUSTOM")
+               ? (customStyle ? `Custom: ${customStyle}` : null)
+               : selectedStyle
+          }
+          onClearStyle={() => {
+            setSelectedStyle(null);
+            setCustomStyle(null);
+          }}
+          selectedColor={selectedColor}
+          onClearColor={() => setSelectedColor(null)}
+          selectedRatio={selectedRatio}
+          onClearRatio={() => setSelectedRatio(null)}
+        />
+        
+        <PlaygroundControls
           mode={mode}
           onModeChange={handleModeChange}
-          onToggleStyles={() => setShowStyles((s) => !s)}
-          selectedStyle={selectedStyle}
-          onToggleVibe={() => setShowVibe((s) => !s)}
+          activeCarousel={activeCarousel}
+          onCarouselChange={setActiveCarousel}
         />
-        <StyleCarousel
-          visible={showStyles}
-          images={styleImages}
-          onSelect={(url) => {
-            setSelectedStyle(url);
-          }}
+
+        <AnimatePresence mode="wait">
+          <motion.div
+            key={activeCarousel}
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -10 }}
+            transition={{ duration: 0.2 }}
+          >
+            <StyleCarousel
+              visible={true}
+              images={activeCarousel === "style" ? styleImages : vibeImages}
+              onSelect={(url) => {
+                if (activeCarousel === "style") {
+                  setSelectedStyle(url);
+                } else {
+                  // Vibe logic: distinguish between color and ratio
+                  if (url.includes("BLACK_WHITE") || url.includes("COLORFUL") || url.includes("CUSTOM")) {
+                    setSelectedColor(url);
+                  } else {
+                    setSelectedRatio(url);
+                  }
+                }
+              }}
+              selected={
+                activeCarousel === "style"
+                  ? selectedStyle
+                  : [selectedColor, selectedRatio].filter((s): s is string => !!s)
+              }
+              emptyMessage={
+                activeCarousel === "style"
+                  ? "No styles available."
+                  : "No vibes available."
+              }
+            />
+          </motion.div>
+        </AnimatePresence>
+
+        <CustomStyleInput
+          isVisible={activeCarousel === "style" && !!selectedStyle?.includes("CUSTOM")}
+          onSubmit={(style) => setCustomStyle(style)}
         />
-        <StyleCarousel
-          visible={showVibe}
-          images={vibeImages}
-          emptyMessage="No vibes available."
+        
+        <CustomStyleInput
+          isVisible={activeCarousel === "vibe" && !!selectedColor?.includes("CUSTOM")}
+          onSubmit={(color) => setCustomColor(color)}
         />
 
         <>

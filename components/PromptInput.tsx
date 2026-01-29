@@ -3,42 +3,33 @@ import { ArrowUp } from "lucide-react";
 import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ModeToggle } from "@/components/ModeToggle";
-import { TattooStyles } from "@/components/Tattoo-Styles/styles";
-import { VibeCheck } from "@/components/VibeCheck";
-// TattooPlacements removed from choices
-
-type QualityMode = "performance" | "quality";
+import { SelectedStyleBadge } from "@/components/SelectedStyleBadge/SelectedStyleBadge";
 
 interface PromptInputProps {
   onSubmit: (prompt: string) => void;
   isLoading?: boolean;
-  showProviders: boolean;
-  onToggleProviders: () => void;
-  mode: QualityMode;
-  onModeChange: (mode: QualityMode) => void;
-  onToggleStyles?: () => void;
   selectedStyle?: string | null;
-  onToggleVibe?: () => void;
+  onClearStyle?: () => void;
+  selectedColor?: string | null;
+  onClearColor?: () => void;
+  selectedRatio?: string | null;
+  onClearRatio?: () => void;
 }
 
 export function PromptInput({
   isLoading,
   onSubmit,
-  onToggleStyles,
   selectedStyle,
-  onToggleVibe,
+  onClearStyle,
+  selectedColor,
+  onClearColor,
+  selectedRatio,
+  onClearRatio,
 }: Readonly<PromptInputProps>) {
   const [input, setInput] = useState("");
 
   useEffect(() => {
-    if (selectedStyle) {
-      // append a simple placeholder tag when a style is selected
-      setInput((prev) =>
-        prev.includes(`[style:${selectedStyle}]`)
-          ? prev
-          : `${prev} [style:${selectedStyle}]`,
-      );
-    }
+    // URL injection removed
   }, [selectedStyle]);
 
   const handleSubmit = () => {
@@ -57,7 +48,7 @@ export function PromptInput({
   };
 
   return (
-    <div className="w-full mb-8">
+    <div className="w-full mb-4">
       <div className="bg-zinc-50 rounded-xl p-4">
         <div className="flex flex-col gap-3">
           <Textarea
@@ -68,11 +59,27 @@ export function PromptInput({
             rows={3}
             className="text-base bg-transparent border-none p-0 resize-none placeholder:text-zinc-500 text-[#111111] focus-visible:ring-0 focus-visible:ring-offset-0"
           />
-          <div className="flex items-center justify-between pt-1">
-            <div className="flex items-center justify-between space-x-2">
+          <div className="flex items-center justify-between pt-1 pb-[10px]">
+            <div className="flex items-center gap-2">
               <ModeToggle />
-              <TattooStyles onClick={onToggleStyles} />
-              <VibeCheck onClick={onToggleVibe} />
+              {selectedStyle && (
+                <SelectedStyleBadge
+                  selectedStyle={selectedStyle}
+                  onClear={onClearStyle}
+                />
+              )}
+              {selectedColor && (
+                <SelectedStyleBadge
+                  selectedStyle={selectedColor}
+                  onClear={onClearColor}
+                />
+              )}
+              {selectedRatio && (
+                <SelectedStyleBadge
+                  selectedStyle={selectedRatio}
+                  onClear={onClearRatio}
+                />
+              )}
             </div>
             <button
               onClick={handleSubmit}

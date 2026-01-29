@@ -1,0 +1,13 @@
+{
+  "mcpServers": {
+    "your-server-name": {
+      "url": "your-server-url"
+    },
+    "console-ninja": {
+      "command": "node",
+      "args": [
+        "~/.console-ninja/mcp/"
+      ]
+    }
+  }
+}

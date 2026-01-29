@@ -43,8 +43,8 @@ export function useImageGeneration(): UseImageGenerationReturn {
     setActivePrompt(prompt);
     try {
       setIsLoading(true);
-      // Initialize a fixed number of result slots (2) with null images
-      const NUM_SLOTS = 2;
+      // Initialize a fixed number of result slots (4) with null images
+      const NUM_SLOTS = 4;
       const initialImages: ImageResult[] = Array.from({ length: NUM_SLOTS }).map((_, i) => {
         const provider = providers[i % providers.length];
         return {
