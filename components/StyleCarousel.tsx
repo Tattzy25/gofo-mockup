@@ -40,7 +40,7 @@ export function StyleCarousel({
   return (
     <div className="mt-4">
       <div className="overflow-x-auto hide-scrollbar">
-        <div className="flex gap-6 px-4">
+        <div className="flex gap-6 px-4 py-[10px]">
           {images.map((src, idx) => {
             // Special sentinel for rendering a half-empty white divider card
             if (src === "__divider__") {
@@ -100,22 +100,24 @@ export function StyleCarousel({
                 onClick={handleClick}
                 aria-label={`Select style ${idx + 1}`}
                 data-selected={isSelected ? "true" : undefined}
-                className={
-                  "flex-shrink-0 bg-muted rounded-lg overflow-hidden border border-transparent hover:border-gray-300" +
-                  (isSelected && selectedClassName ? ` ${selectedClassName}` : "")
-                }
+                className={`
+                  group relative flex-shrink-0 w-32 aspect-[4/5] rounded-lg overflow-hidden transition-all duration-200
+                  ${isSelected ? "ring-2 ring-[#39ff14] shadow-[0_0_10px_rgba(57,255,20,0.3)] scale-[1.02]" : "hover:scale-[1.02]"}
+                  ${selectedClassName ?? ""}
+                `}
               >
-                <div className="w-32 aspect-[4/5] relative">
-                  <Image
-                    src={src}
-                    alt={`style-${idx + 1}`}
-                    fill
-                    sizes="(min-width: 1024px) 160px, 128px"
-                    className="object-cover"
-                    onError={() => setHiddenMap((s) => ({ ...s, [src]: true }))}
-                  />
-                </div>
-                <div className="px-2 mt-2 text-center text-sm md:text-base font-medium text-muted-foreground">
+                <Image
+                  src={src}
+                  alt={`Style ${idx + 1}`}
+                  fill
+                  sizes="(min-width: 1024px) 160px, 128px"
+                  className="object-cover"
+                  onError={() => {
+                    setHiddenMap((prev) => ({ ...prev, [src]: true }));
+                  }}
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-200" />
+                <div className="absolute bottom-0 left-0 right-0 p-2 text-white text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-center">
                   {label}
                 </div>
               </button>

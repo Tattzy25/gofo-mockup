@@ -80,7 +80,14 @@ export function useImageGeneration(): UseImageGenerationReturn {
             modelId,
           };
 
-          const response = await fetch("/api/generate-images", {
+          // const response = await fetch("/api/generate-images", {
+          //   method: "POST",
+          //   headers: { "Content-Type": "application/json" },
+          //   body: JSON.stringify(request),
+          // });
+          
+          // Temporary switch to Dify endpoint
+          const response = await fetch("https://api.dify.ai/mcp/server/u4cbxV8X77O1fKSZ/mcp", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify(request),
