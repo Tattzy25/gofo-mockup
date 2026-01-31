@@ -1,24 +1,21 @@
-import { ProviderKey } from "./provider-config";
 
-export interface GeneratedImage {
-  provider: ProviderKey;
-  image: string | null;
-  modelId?: string;
-}
+import { ProviderKey } from "./provider-config";
 
 export interface ImageResult {
   provider: ProviderKey;
   image: string | null;
-  modelId?: string;
+  modelId: string;
 }
 
 export interface ImageError {
   provider: ProviderKey;
-  message: string;
+  error: string;
 }
 
 export interface ProviderTiming {
   startTime?: number;
+  endTime?: number;
+  duration?: number;
   completionTime?: number;
   elapsed?: number;
 }

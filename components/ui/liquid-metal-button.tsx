@@ -8,9 +8,11 @@ interface LiquidMetalButtonProps {
   label?: string
   onClick?: () => void
   viewMode?: "text" | "icon"
+  animate?: boolean
+  icon?: React.ReactNode
 }
 
-export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "text" }: LiquidMetalButtonProps) {
+export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "text", animate = true, icon }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
@@ -96,7 +98,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
               u_offsetY: -0.1,
             },
             undefined,
-            0.6,
+            animate ? 0.6 : 0, // Set speed based on animate prop
           )
         }
       } catch (error) {
@@ -112,21 +114,25 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
         shaderMount.current = null
       }
     }
-  }, [dimensions.width, dimensions.height])
+  }, [dimensions.width, dimensions.height, animate])
 
   const handleMouseEnter = () => {
     setIsHovered(true)
-    shaderMount.current?.setSpeed?.(1)
+    if (animate) {
+      shaderMount.current?.setSpeed?.(1)
+    }
   }
 
   const handleMouseLeave = () => {
     setIsHovered(false)
     setIsPressed(false)
-    shaderMount.current?.setSpeed?.(0.6)
+    if (animate) {
+      shaderMount.current?.setSpeed?.(0.6)
+    }
   }
 
   const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
-    if (shaderMount.current?.setSpeed) {
+    if (shaderMount.current?.setSpeed && animate) {
       shaderMount.current.setSpeed(2.4)
       setTimeout(() => {
         if (isHovered) {
@@ -190,21 +196,37 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
             }}
           >
             {viewMode === "icon" && (
-              <Sparkles
-                size={16}
-                style={{
-                  color: "#666666",
-                  filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
-                  transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
-                  transform: "scale(1)",
-                }}
-              />
+              icon ? (
+                <div
+                  style={{
+                    color: "#FFFFFF",
+                    filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
+                    transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    transform: "scale(1)",
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "center",
+                  }}
+                >
+                  {icon}
+                </div>
+              ) : (
+                <Sparkles
+                  size={16}
+                  style={{
+                    color: "#666666",
+                    filter: "drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.5))",
+                    transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
+                    transform: "scale(1)",
+                  }}
+                />
+              )
             )}
             {viewMode === "text" && (
               <span
                 style={{
                   fontSize: "14px",
-                  color: "#666666",
+                  color: "#FFFFFF",
                   fontWeight: 400,
                   textShadow: "0px 1px 2px rgba(0, 0, 0, 0.5)",
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",

@@ -58,8 +58,8 @@ function LiquidMetalCard({
         offsetX={offsetX}
         offsetY={offsetY}
       />
-      <div className='absolute inset-0.75 rounded-[calc(1rem-1px)] bg-card inset-shadow-lg' />
-      <div className='relative flex flex-col gap-6 group-data-[size=sm]/card:gap-4'>
+      <div className='absolute inset-[3px] rounded-[calc(1rem-1px)] bg-card inset-shadow-lg' />
+      <div className='relative flex flex-col gap-6 group-data-[size=sm]/card:gap-4 h-full w-full'>
         {children}
       </div>
     </Card>

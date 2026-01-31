@@ -1,5 +1,5 @@
 import React from "react";
-import { Badge } from "@/components/ui/badge";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { getStyleLabel } from "@/lib/utils";
 
 interface SelectedStyleBadgeProps {
@@ -13,15 +13,15 @@ export function SelectedStyleBadge({
 }: Readonly<SelectedStyleBadgeProps>) {
   if (!selectedStyle) return null;
 
-  const label = getStyleLabel(selectedStyle);
+  // The label is already formatted by the parent component (ImagePlayground)
+  const label = selectedStyle;
 
   return (
-    <Badge
-      variant="secondary"
-      className="rounded-full px-3 py-1 text-sm font-medium flex items-center cursor-pointer bg-black text-white hover:bg-black/80 transition-colors"
+    <LiquidMetalButton
+      label={label}
       onClick={onClear}
-    >
-      {label}
-    </Badge>
+      viewMode="text"
+      animate={true}
+    />
   );
 }

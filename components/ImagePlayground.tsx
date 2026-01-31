@@ -1,26 +1,27 @@
 "use client";
 
-import { useState } from "react";
-import { useEffect } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "framer-motion";
-import { ModelSelect } from "@/components/ModelSelect";
+import { ImageDisplay } from "@/components/ImageDisplay";
 import { PromptInput } from "@/components/PromptInput";
 import { StyleCarousel } from "@/components/StyleCarousel";
 import { PlaygroundControls } from "@/components/PlaygroundControls/PlaygroundControls";
-import { ModelCardCarousel } from "@/components/ModelCardCarousel";
 import { CustomStyleInput } from "@/components/CustomStyleInput/CustomStyleInput";
 import { WelcomeOverlay } from "@/components/WelcomeOverlay/WelcomeOverlay";
-import {
-  MODEL_CONFIGS,
-  PROVIDERS,
-  PROVIDER_ORDER,
-  ProviderKey,
-  ModelMode,
-  initializeProviderRecord,
-} from "@/lib/provider-config";
-import { useImageGeneration } from "@/hooks/use-image-generation";
-import { Header } from "./Header";
+import { ProviderKey } from "@/lib/provider-config";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
+import { useToast } from "@/hooks/use-toast";
+import { useImageGeneration } from "@/hooks/use-image-generation";
+import { 
+  TATTOO_STYLES 
+} from "@/components/Tattoo-Styles/config";
+import { 
+  TATTOO_COLORS 
+} from "@/components/Tattoo Colors/config";
+import { 
+  TATTOO_RATIOS 
+} from "@/components/Tattoo Aspect Ratio/config";
+import { TattooOption } from "@/lib/api-types";
 
 export function ImagePlayground({}: {}) {
   const {
@@ -32,105 +33,112 @@ export function ImagePlayground({}: {}) {
     activePrompt,
   } = useImageGeneration();
 
-  const [showProviders, setShowProviders] = useState(true);
-  const [selectedModels, setSelectedModels] = useState<
-    Record<ProviderKey, string>
-  >(MODEL_CONFIGS.performance);
-  const [enabledProviders, setEnabledProviders] = useState(
-    initializeProviderRecord(true),
-  );
-  const [mode, setMode] = useState<ModelMode>("performance");
-  const toggleView = () => {
-    setShowProviders((prev) => !prev);
-  };
-
+  const [promptInput, setPromptInput] = useState("");
   const [activeCarousel, setActiveCarousel] = useState<"style" | "vibe">("style");
-  const [selectedStyle, setSelectedStyle] = useState<string | null>(null);
-  const [selectedColor, setSelectedColor] = useState<string | null>(null);
-  const [selectedRatio, setSelectedRatio] = useState<string | null>(null);
+  
+  // Initialize with defaults as requested ("except the defaults that I have")
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
+  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
+  const [selectedRatioId, setSelectedRatioId] = useState<string | null>(null);
+  
   const [customStyle, setCustomStyle] = useState<string | null>(null);
   const [customColor, setCustomColor] = useState<string | null>(null);
-  const [styleImages, setStyleImages] = useState<string[]>([]);
-  const [stylesLoading, setStylesLoading] = useState(false);
+  
   const [isActivated, setIsActivated] = useState(false);
 
-  const vibeImages: string[] = [
-    // Colors first
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/BLACK_WHITE.png?v=1769632094",
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/COLORFUL.png?v=1769632094",
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/CUSTOM.png?v=1769726194",
-    // Visual divider card
-    "__divider__",
-    // Aspect ratios
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/9_16.png?v=1769631343",
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/16_9.png?v=1769631343",
-    "https://cdn.shopify.com/s/files/1/0649/4155/5787/files/1_1.png?v=1769631344",
-  ];
-
-  useEffect(() => {
-    let mounted = true;
-    const load = async () => {
-      setStylesLoading(true);
-      try {
-        const module = await import("@/lib/style-images");
-        const imgs = await module.fetchStyleImages();
-        if (mounted) setStyleImages(imgs || []);
-      } catch (err) {
-        console.error("Failed to load style images:", err);
-        if (mounted) setStyleImages([]);
-      } finally {
-        if (mounted) setStylesLoading(false);
-      }
-    };
-
-    load();
-    return () => {
-      mounted = false;
-    };
-  }, []);
-
-  const handleModeChange = (newMode: ModelMode) => {
-    setMode(newMode);
-    setSelectedModels(MODEL_CONFIGS[newMode]);
-    setShowProviders(true);
+  // Combine colors and ratios for the vibe carousel
+  const dividerOption: TattooOption = {
+    id: "divider",
+    label: "",
+    value: "divider",
+    imageUrl: "/divider-sign.png",
+    group: "divider"
   };
 
-  const handleModelChange = (providerKey: ProviderKey, model: string) => {
-    setSelectedModels((prev) => ({ ...prev, [providerKey]: model }));
-  };
+  const vibeOptions: TattooOption[] = [...TATTOO_COLORS, dividerOption, ...TATTOO_RATIOS];
 
-  const handleProviderToggle = (provider: string, enabled: boolean) => {
-    setEnabledProviders((prev) => ({
-      ...prev,
-      [provider]: enabled,
-    }));
-  };
+  const { toast } = useToast();
 
-  const providerToModel = {
-    mcp: selectedModels.mcp,
-  };
-
-  const handlePromptSubmit = (newPrompt: string) => {
-    const activeProviders = PROVIDER_ORDER.filter((p) => enabledProviders[p]);
-    if (activeProviders.length > 0) {
-      // Pass raw values to startGeneration, let the hook handle payload construction
-      startGeneration(
-        newPrompt,
-        customStyle || selectedStyle,
-        customColor || selectedColor,
-        selectedRatio,
-        activeProviders,
-        providerToModel
-      );
+  const handlePromptSubmit = () => {
+    const newPrompt = promptInput;
+    
+    // Validation Gates
+    if (!selectedStyleId && !customStyle) {
+      toast({
+        title: "Missing Style",
+        description: "Please select a tattoo style to continue.",
+        variant: "destructive",
+      });
+      return;
     }
-    setShowProviders(false);
+
+    if (!selectedColorId && !customColor) {
+      toast({
+        title: "Missing Color",
+        description: "Please select a color preference.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!selectedRatioId) {
+      toast({
+        title: "Missing Aspect Ratio",
+        description: "Please select an aspect ratio.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    if (!newPrompt || newPrompt.trim().length < 10) {
+      toast({
+        title: "Answer Too Short",
+        description: "Your answer must be at least 10 characters long to generate a meaningful design.",
+        variant: "destructive",
+      });
+      return;
+    }
+    
+    const selectedStyle = TATTOO_STYLES.find(s => s.id === selectedStyleId);
+    const selectedColor = TATTOO_COLORS.find(c => c.id === selectedColorId);
+    const selectedRatio = TATTOO_RATIOS.find(r => r.id === selectedRatioId);
+
+    const finalStyle = (selectedStyle?.isCustom ? customStyle : selectedStyle?.value) ?? null;
+    const finalColor = (selectedColor?.isCustom ? customColor : selectedColor?.value) ?? null;
+    const finalRatio = selectedRatio?.value ?? null;
+
+    console.log("Submitting Generation Request:", { 
+        prompt: newPrompt, 
+        style: finalStyle, 
+        color: finalColor, 
+        ratio: finalRatio 
+    });
+
+    // Single provider, no fallbacks
+    const providers: ProviderKey[] = ["default"]; 
+    const providerToModel: Record<ProviderKey, string> = {
+        default: "dify-workflow",
+    };
+
+    startGeneration(
+      newPrompt,
+      finalStyle,
+      finalColor,
+      finalRatio,
+      providers,
+      providerToModel
+    );
+  };
+
+  const getLabelForId = (id: string | null, options: TattooOption[]) => {
+    if (!id) return null;
+    const opt = options.find(o => o.id === id);
+    return opt?.label || null;
   };
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <Header />
-        
+    <div className="min-h-screen bg-background text-foreground p-4">
+      <div className="max-w-5xl mx-auto">
         <div className="relative mb-4">
           <AnimatePresence>
             {!isActivated && (
@@ -140,28 +148,28 @@ export function ImagePlayground({}: {}) {
           
           <div className={!isActivated ? "opacity-0 pointer-events-none" : ""}>
             <PromptInput
+              value={promptInput}
+              onChange={setPromptInput}
               onSubmit={handlePromptSubmit}
               isLoading={isLoading}
               selectedStyle={
-                 selectedStyle?.includes("CUSTOM")
-                   ? (customStyle ? `Custom: ${customStyle}` : null)
-                   : selectedStyle
+                 selectedStyleId === "custom-style"
+                   ? (customStyle ? `Custom: ${customStyle}` : "Custom Style")
+                   : getLabelForId(selectedStyleId, TATTOO_STYLES)
               }
               onClearStyle={() => {
-                setSelectedStyle(null);
+                setSelectedStyleId(null);
                 setCustomStyle(null);
               }}
-              selectedColor={selectedColor}
-              onClearColor={() => setSelectedColor(null)}
-              selectedRatio={selectedRatio}
-              onClearRatio={() => setSelectedRatio(null)}
+              selectedColor={getLabelForId(selectedColorId, TATTOO_COLORS)}
+              onClearColor={() => setSelectedColorId(null)}
+              selectedRatio={getLabelForId(selectedRatioId, TATTOO_RATIOS)}
+              onClearRatio={() => setSelectedRatioId(null)}
             />
           </div>
         </div>
         
         <PlaygroundControls
-          mode={mode}
-          onModeChange={handleModeChange}
           activeCarousel={activeCarousel}
           onCarouselChange={setActiveCarousel}
         />
@@ -176,23 +184,23 @@ export function ImagePlayground({}: {}) {
           >
             <StyleCarousel
               visible={true}
-              images={activeCarousel === "style" ? styleImages : vibeImages}
-              onSelect={(url) => {
+              options={activeCarousel === "style" ? TATTOO_STYLES : vibeOptions}
+              onSelect={(option) => {
                 if (activeCarousel === "style") {
-                  setSelectedStyle(url);
+                  setSelectedStyleId(option.id);
                 } else {
-                  // Vibe logic: distinguish between color and ratio
-                  if (url.includes("BLACK_WHITE") || url.includes("COLORFUL") || url.includes("CUSTOM")) {
-                    setSelectedColor(url);
-                  } else {
-                    setSelectedRatio(url);
+                  // Vibe logic: clearly distinguish using the 'group' property
+                  if (option.group === "color") {
+                    setSelectedColorId(option.id);
+                  } else if (option.group === "ratio") {
+                    setSelectedRatioId(option.id);
                   }
                 }
               }}
               selected={
                 activeCarousel === "style"
-                  ? selectedStyle
-                  : [selectedColor, selectedRatio].filter((s): s is string => !!s)
+                  ? selectedStyleId
+                  : [selectedColorId, selectedRatioId].filter((s): s is string => !!s)
               }
               emptyMessage={
                 activeCarousel === "style"
@@ -204,62 +212,56 @@ export function ImagePlayground({}: {}) {
         </AnimatePresence>
 
         <CustomStyleInput
-          isVisible={activeCarousel === "style" && !!selectedStyle?.includes("CUSTOM")}
+          isVisible={activeCarousel === "style" && selectedStyleId === "custom-style"}
           onSubmit={(style) => setCustomStyle(style)}
         />
         
         <CustomStyleInput
-          isVisible={activeCarousel === "vibe" && !!selectedColor?.includes("CUSTOM")}
+          isVisible={activeCarousel === "vibe" && selectedColorId === "custom-color"}
           onSubmit={(color) => setCustomColor(color)}
         />
 
-        <>
-          {(() => {
-            const getModelProps = () =>
-              (Object.keys(PROVIDERS) as ProviderKey[]).map((key) => {
-                const provider = PROVIDERS[key];
-                const providerImages = images.filter((img) => img.provider === key);
-                const imageData = providerImages[0]?.image;
-                const imageData2 = providerImages[1]?.image;
-                const modelId = providerImages[0]?.modelId ?? "N/A";
-                const timing = timings[key];
+        <div className="flex justify-center my-20 py-12 relative z-10">
+          <div className={isLoading ? "opacity-50 pointer-events-none scale-[1.75] origin-center" : "scale-[1.75] origin-center"}>
+            <LiquidMetalButton
+              label={isLoading ? "INKING..." : "INK ME UP"}
+              onClick={handlePromptSubmit}
+              viewMode="text"
+            />
+          </div>
+        </div>
 
-                return {
-                  label: provider.displayName,
-                  models: provider.models,
-                  value: selectedModels[key],
-                  providerKey: key,
-                  onChange: (model: string, providerKey: ProviderKey) =>
-                    handleModelChange(providerKey, model),
-                  iconPath: provider.iconPath,
-                  color: provider.color,
-                  image: imageData,
-                  image2: imageData2,
-                  modelId,
-                  timing,
-                  failed: failedProviders.includes(key),
-                };
-              });
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 max-w-4xl mx-auto mt-6">
+          {images.length === 0 ? (
+            // Render placeholders if no images (e.g. initial state)
+             [0, 1].map((idx) => (
+                <ImageDisplay
+                  key={`placeholder-${idx}`}
+                  provider={`Slot ${idx + 1}`}
+                  image={null}
+                  modelId=""
+                  failed={false}
+                />
+             ))
+          ) : (
+            images.map((img, idx) => (
+              <ImageDisplay
+                key={idx}
+                provider={img.provider}
+                image={img.image}
+                modelId={img.modelId}
+                timing={timings[img.provider]}
+                failed={failedProviders.includes(img.provider)}
+              />
+            ))
+          )}
+        </div>
 
-            return (
-              <>
-                <div className="md:hidden">
-                  <ModelCardCarousel models={getModelProps()} />
-                </div>
-                <div className="hidden md:block md:w-full max-w-4xl mx-auto">
-                  {getModelProps().map((props) => (
-                    <ModelSelect key={props.label} {...props} />
-                  ))}
-                </div>
-                {activePrompt && activePrompt.length > 0 && (
-                  <div className="text-center mt-4 text-muted-foreground">
-                    {activePrompt}
-                  </div>
-                )}
-              </>
-            );
-          })()}
-        </>
+        {activePrompt && activePrompt.length > 0 && (
+          <div className="text-center mt-4 text-muted-foreground">
+            {activePrompt}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -1,0 +1,5 @@
+{
+  "ignore": "components/(Button|Input)",
+  "skip": "\\.test\\.|test/",
+  "project": "tsconfig.json"
+}

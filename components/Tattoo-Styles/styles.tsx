@@ -1,4 +1,4 @@
-import { Button } from "@/components/ui/button";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 
 interface TattooStylesProps {
   onClick?: () => void;
@@ -7,13 +7,11 @@ interface TattooStylesProps {
 
 export function TattooStyles({ onClick, isActive }: Readonly<TattooStylesProps>) {
   return (
-    <Button
-      variant={isActive ? "default" : "ghost"}
-      size="default"
-      className="rounded-full"
+    <LiquidMetalButton
+      label="Styles"
       onClick={onClick}
-    >
-      Styles
-    </Button>
+      viewMode="text"
+      animate={isActive}
+    />
   );
 }

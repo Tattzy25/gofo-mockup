@@ -10,13 +10,14 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { ImageDisplay } from "./ImageDisplay";
+import { LiquidMetalCard } from "@/components/ui/liquid-metal-card";
 import { cn } from "@/lib/utils";
 import { ProviderKey } from "@/lib/provider-config";
-import { GeneratedImage, ProviderTiming } from "@/lib/image-types";
+import { ImageResult, ProviderTiming } from "@/lib/image-types";
 
 interface ImageCarouselProps {
   providers: ProviderKey[];
-  images: GeneratedImage[];
+  images: ImageResult[];
   timings: Record<ProviderKey, ProviderTiming>;
   failedProviders: ProviderKey[];
   enabledProviders: Record<ProviderKey, boolean>;
@@ -55,17 +56,24 @@ export function ImageCarousel(props: Readonly<ImageCarouselProps>) {
 
             return (
               <CarouselItem key={provider}>
-                <ImageDisplay
-                  modelId={
-                    images?.find((img) => img.provider === provider)?.modelId ||
-                    providerToModel[provider]
-                  }
-                  provider={provider}
-                  image={imageData}
-                  timing={timing}
-                  failed={failedProviders.includes(provider)}
-                  enabled={enabledProviders[provider]}
-                />
+                <LiquidMetalCard
+                  speed={0.6}
+                  className="w-full aspect-square p-[3px] rounded-xl"
+                >
+                  <div className="relative w-full h-full rounded-[calc(0.75rem-3px)] overflow-hidden">
+                    <ImageDisplay
+                      modelId={
+                        images?.find((img) => img.provider === provider)?.modelId ||
+                        providerToModel[provider]
+                      }
+                      provider={provider}
+                      image={imageData}
+                      timing={timing}
+                      failed={failedProviders.includes(provider)}
+                      enabled={enabledProviders[provider]}
+                    />
+                  </div>
+                </LiquidMetalCard>
                 <div className="text-center text-sm text-muted-foreground mt-4">
                   {i + 1} of {providers.length}
                 </div>

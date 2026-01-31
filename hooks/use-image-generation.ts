@@ -47,113 +47,93 @@ export function useImageGeneration(): UseImageGenerationReturn {
     providerToModel: Record<ProviderKey, string>,
   ) => {
     setActivePrompt(prompt);
+    setIsLoading(true);
+    setErrors([]);
+    setFailedProviders([]);
+    
+    // Reset images/timings
+    setImages([]);
+    const startTime = Date.now();
+    const provider = providers[0] || "default";
+    
+    setTimings({
+        [provider]: { startTime }
+    });
+
     try {
-      setIsLoading(true);
-      // Initialize a fixed number of result slots (2) with null images
-      const NUM_SLOTS = 2;
-      const initialImages: ImageResult[] = Array.from({ length: NUM_SLOTS }).map((_, i) => {
-        const provider = providers[i % providers.length];
-        return {
-          provider,
-          image: null,
-          modelId: providerToModel[provider],
-        } as ImageResult;
+      const response = await fetch('/api/generate', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          prompt,
+          style,
+          color,
+          ratio: aspectRatio,
+        }),
       });
-      setImages(initialImages);
 
-      // Clear previous state
-      setErrors([]);
-      setFailedProviders([]);
+      const data = await response.json();
+      console.log("API Response:", data);
 
-      // Initialize timings with start times
-      const now = Date.now();
-      setTimings(
-        Object.fromEntries(
-          providers.map((provider) => [provider, { startTime: now }]),
-        ) as Record<ProviderKey, ProviderTiming>,
-      );
-
-          // Helper to fetch a single slot (may reuse providers if fewer providers than slots)
-      const generateImage = async (slotIndex: number, provider: ProviderKey, modelId: string) => {
-        const startTime = Date.now();
-        try {
-          const request = {
-            prompt,
-            provider,
-            modelId,
-            style,
-            color,
-            aspectRatio,
-          };
-
-          const response = await fetch("/api/generate-images", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(request),
-          });
-          const data = await response.json();
-          if (!response.ok) {
-            throw new Error(data.error || `Server error: ${response.status}`);
-          }
-
-          const completionTime = Date.now();
-          const elapsed = completionTime - startTime;
-          setTimings((prev) => ({
-            ...prev,
-            [provider]: {
-              startTime,
-              completionTime,
-              elapsed,
-            },
-          }));
-
-          console.log(
-            `Successful image response [provider=${provider}, modelId=${modelId}, elapsed=${elapsed}ms]`,
-          );
-
-          // Update the specific slot in state
-          setImages((prevImages) =>
-            prevImages.map((item, idx) =>
-              idx === slotIndex ? { ...item, image: data.image ?? null, modelId } : item,
-            ),
-          );
-        } catch (err) {
-          console.error(
-            `Error [slot=${slotIndex}, provider=${provider}, modelId=${modelId}]:`,
-            err,
-          );
-          setFailedProviders((prev) => [...prev, provider]);
-          setErrors((prev) => [
-            ...prev,
-            {
-              provider,
-              message:
-                err instanceof Error
-                  ? err.message
-                  : "An unexpected error occurred",
-            },
-          ]);
-
-          // Mark the slot as failed (image remains null)
-          setImages((prevImages) =>
-            prevImages.map((item, idx) =>
-              idx === slotIndex ? { ...item, image: null, modelId } : item,
-            ),
-          );
-        }
-      };
-
-      // Generate images for a fixed set of slots, distributing providers across slots
-      const fetchPromises: Promise<void>[] = [];
-      for (let slot = 0; slot < NUM_SLOTS; slot++) {
-        const provider = providers[slot % providers.length];
-        const modelId = providerToModel[provider];
-        fetchPromises.push(generateImage(slot, provider, modelId));
+      if (!response.ok) {
+        throw new Error(data.details || data.error || 'Failed to generate image');
       }
 
-      await Promise.all(fetchPromises);
-    } catch (error) {
-      console.error("Error fetching images:", error);
+      const completionTime = Date.now();
+      setTimings(prev => ({
+        ...prev,
+        [provider]: {
+          startTime,
+          completionTime,
+          elapsed: completionTime - startTime
+        }
+      }));
+
+      // Handle Dify Response Structure
+      let newImages: Array<{ provider: ProviderKey; image: string; modelId: string }> = [];
+
+      if (data && data.data && data.data.outputs) {
+          const outputs = data.data.outputs;
+          
+          // Check for file list first (handling multiple images)
+          if (Array.isArray(outputs.files) && outputs.files.length > 0) {
+            newImages = outputs.files.map((file: any) => ({
+              provider,
+              image: file.url,
+              modelId: providerToModel[provider] || "dify",
+            }));
+          } 
+          // Single image string
+          else if (typeof outputs.image === 'string') {
+             newImages.push({ provider, image: outputs.image, modelId: providerToModel[provider] || "dify" });
+          }
+          // Single url string
+          else if (typeof outputs.url === 'string') {
+             newImages.push({ provider, image: outputs.url, modelId: providerToModel[provider] || "dify" });
+          }
+          // Text fallback
+          else if (typeof outputs.text === 'string' && outputs.text.startsWith('http')) {
+             newImages.push({ provider, image: outputs.text, modelId: providerToModel[provider] || "dify" });
+          }
+      }
+
+      if (newImages.length > 0) {
+        setImages(newImages);
+      } else {
+        // No valid images found - Fail hard
+        console.error("Dify response contained no valid images:", data);
+        throw new Error("No images were generated. Please try again later.");
+      }
+
+    } catch (err: any) {
+      console.error("Generation Error:", err);
+      setFailedProviders([provider]);
+      setErrors([{
+        provider,
+        error: err.message || "Please try again later."
+      }]);
     } finally {
       setIsLoading(false);
     }

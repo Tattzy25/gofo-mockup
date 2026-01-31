@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { ArrowUp } from "lucide-react";
-import { Spinner } from "@/components/ui/spinner";
 import { Textarea } from "@/components/ui/textarea";
 import { ModeToggle } from "@/components/ModeToggle";
 import { SelectedStyleBadge } from "@/components/SelectedStyleBadge/SelectedStyleBadge";
-import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { useToast } from "@/hooks/use-toast";
 
 interface PromptInputProps {
-  onSubmit: (prompt: string) => void;
+  value: string;
+  onChange: (value: string) => void;
+  onSubmit: () => void;
   isLoading?: boolean;
   selectedStyle?: string | null;
   onClearStyle?: () => void;
@@ -19,6 +18,8 @@ interface PromptInputProps {
 }
 
 export function PromptInput({
+  value,
+  onChange,
   isLoading,
   onSubmit,
   selectedStyle,
@@ -28,63 +29,16 @@ export function PromptInput({
   selectedRatio,
   onClearRatio,
 }: Readonly<PromptInputProps>) {
-  const [input, setInput] = useState("");
   const { toast } = useToast();
 
   useEffect(() => {
     // URL injection removed
   }, [selectedStyle]);
 
-  const validateAndSubmit = () => {
-    if (isLoading) return;
-
-    if (!selectedStyle) {
-        toast({
-            title: "Style required",
-            description: "Please select a style to proceed.",
-            variant: "destructive",
-        });
-        return;
-    }
-
-    if (!selectedColor) {
-        toast({
-            title: "Color required",
-            description: "Please select a color/vibe to proceed.",
-            variant: "destructive",
-        });
-        return;
-    }
-
-    if (!selectedRatio) {
-        toast({
-            title: "Size required",
-            description: "Please select a size (aspect ratio) to proceed.",
-            variant: "destructive",
-        });
-        return;
-    }
-
-    if (input.trim().length < 10) {
-        toast({
-            title: "More detail needed",
-            description: "Please enter at least 10 characters for your answer.",
-            variant: "destructive",
-        });
-        return;
-    }
-
-    onSubmit(input);
-  };
-
-  const handleSubmit = () => {
-    validateAndSubmit();
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
-      validateAndSubmit();
+      onSubmit();
     }
   };
 
@@ -98,14 +52,14 @@ export function PromptInput({
             </h3>
           </div>
           <Textarea
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
+            value={value}
+            onChange={(e) => onChange(e.target.value)}
             onKeyDown={handleKeyDown}
             placeholder="Don't overthink it, just be yourself"
             rows={3}
-            className="text-base bg-transparent border-none p-0 resize-none placeholder:text-zinc-500 text-[#111111] focus-visible:ring-0 focus-visible:ring-offset-0"
+            className="text-base bg-transparent border border-zinc-300 rounded-md p-2 resize-none placeholder:text-zinc-500 text-[#111111] focus-visible:ring-0 focus-visible:ring-offset-0"
           />
-          <div className="flex items-center justify-between pt-1 pb-[10px]">
+          <div className="flex items-center justify-center pt-1 pb-[10px]">
             <div className="flex items-center gap-2">
               <ModeToggle />
               {selectedStyle && (
@@ -126,13 +80,6 @@ export function PromptInput({
                   onClear={onClearRatio}
                 />
               )}
-            </div>
-            <div className={isLoading ? "opacity-50 pointer-events-none" : ""}>
-              <LiquidMetalButton
-                label={isLoading ? "INKING..." : "INK ME UP"}
-                onClick={handleSubmit}
-                viewMode="text"
-              />
             </div>
           </div>
         </div>

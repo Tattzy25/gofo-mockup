@@ -13,3 +13,12 @@ export interface GenerateImageResponse {
   image?: string;
   error?: string;
 }
+
+export interface TattooOption {
+  id: string;
+  label: string;
+  value: string; // The value sent to the API
+  imageUrl: string;
+  isCustom?: boolean;
+  group: "style" | "color" | "ratio" | "divider";
+}

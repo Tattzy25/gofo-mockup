@@ -4,8 +4,9 @@
  import "./globals.css";
  import { Analytics } from "@vercel/analytics/react";
  import { ThemeProvider } from "@/components/theme-provider";
- 
- const orbitron = Orbitron({
+import { Toaster } from "@/components/ui/toaster";
+
+const orbitron = Orbitron({
    subsets: ["latin"],
    variable: "--font-orbitron",
    display: "swap",
@@ -44,10 +45,11 @@
            defaultTheme="system"
            enableSystem
            disableTransitionOnChange
-         >
-           {children}
-           <Analytics />
-         </ThemeProvider>
+        >
+          {children}
+          <Toaster />
+          <Analytics />
+        </ThemeProvider>
        </body>
      </html>
    );
