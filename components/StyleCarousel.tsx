@@ -47,8 +47,10 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
       <div 
         className={`
           relative w-48 aspect-[4/5] rounded-lg overflow-hidden transition-all duration-200
-          border-[3px] border-transparent
-          ${isSelected ? "border-[#c084fc] ring-[3px] ring-[#c084fc] ring-offset-4 ring-offset-black" : ""}
+          border-[4px] border-transparent
+          ${isSelected
+            ? "border-[#e879f9] ring-[4px] ring-[#e879f9] ring-offset-4 ring-offset-black shadow-[0_0_30px_rgba(232,121,249,0.9)]"
+            : ""}
         `}
         style={{
           boxShadow: boxShadow,
@@ -71,9 +73,9 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
         </LiquidMetalCard>
       </div>
       <span className={`
-        text-sm font-medium tracking-wide transition-colors duration-200
+        text-[20px] md:text-[20px] leading-tight font-medium tracking-wide transition-colors duration-200
         ${isSelected ? "text-primary font-bold" : "text-muted-foreground group-hover:text-foreground"}
-      `}>
+     `}>
         {option.label}
       </span>
     </button>
