@@ -1,8 +1,8 @@
 {
-  "name": "tattty-widget",
+  "name": "tattty-mockup",
   "version": "0.1.0",
   "private": true,
-  "description": "Tattty tattoo image generator widget for https://widget.tattty.com",
+  "description": "Tattty tattoo style mockup and demo for https://mock.tattty.com",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

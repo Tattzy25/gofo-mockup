@@ -1,42 +1,80 @@
 "use client";
 
-import { useState, useEffect } from "react";
-import Image from "next/image";
-import { AnimatePresence, motion } from "framer-motion";
-import { ImageDisplay } from "@/components/ImageDisplay";
+import { useEffect, useMemo, useState } from "react";
 import { PromptInput } from "@/components/PromptInput";
 import { StyleCarousel } from "@/components/StyleCarousel";
-import { ProviderKey } from "@/lib/provider-config";
-import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
-import ModernLoader from "@/components/ui/modern-loader";
-import { useToast } from "@/hooks/use-toast";
-import { useImageGeneration } from "@/hooks/use-image-generation";
-import { 
-  TATTOO_STYLES 
-} from "@/components/Tattoo-Styles/config";
-import { 
-  TATTOO_COLORS 
-} from "@/components/Tattoo Colors/config";
+import { TATTOO_STYLES, MOCK_OUTPUT_STYLE_SLOTS } from "@/components/Tattoo-Styles/config";
+import { TATTOO_COLORS } from "@/components/Tattoo Colors/config";
 import { TattooOption } from "@/lib/api-types";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
+import { Card, CHROME_GLOW } from "@/components/ui/card";
+import Image from "next/image";
+import { AnimatePresence, motion } from "framer-motion";
+
+type MockStage = "selecting" | "generating" | "blocked";
+
+function LoadingSquare() {
+  return (
+    <Card
+      className="relative w-40 sm:w-44 md:w-48 aspect-square rounded-2xl !p-0 !py-0 !gap-0 bg-black/40 overflow-hidden"
+      style={{ boxShadow: CHROME_GLOW.default }}
+    >
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.25s_infinite] [background-size:200%_100%]" />
+      <div className="absolute inset-0 flex items-center justify-center">
+        <div className="h-6 w-6 rounded-full border-2 border-white/30 border-t-white/80 animate-spin" />
+      </div>
+    </Card>
+  );
+}
+
+function BlurredPresetSquare({
+  src,
+  alt,
+  label,
+}: {
+  src?: string | null;
+  alt: string;
+  label: string;
+}) {
+  return (
+    <Card
+      className="relative w-40 sm:w-44 md:w-48 aspect-square rounded-2xl !p-0 !py-0 !gap-0 bg-black/40 overflow-hidden"
+      style={{ boxShadow: CHROME_GLOW.default }}
+    >
+      {src ? (
+        <>
+          <Image
+            src={src}
+            alt={alt}
+            fill
+            sizes="192px"
+            className="object-cover blur-xl scale-110 opacity-90"
+            priority
+          />
+          <div className="absolute inset-0 bg-black/35" />
+        </>
+      ) : (
+        <>
+          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(180,200,255,0.14),transparent_60%),linear-gradient(180deg,rgba(20,20,20,0.25),rgba(0,0,0,0.55))]" />
+          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 flex items-center justify-center px-4">
+            <div className="text-white/55 text-sm font-medium tracking-wide blur-[1px] select-none text-center">
+              {label}
+            </div>
+          </div>
+        </>
+      )}
+    </Card>
+  );
+}
 
 export function ImagePlayground({}: {}) {
-  const {
-    images,
-    timings,
-    failedProviders,
-    isLoading,
-    startGeneration,
-    activePrompt,
-    errors,
-  } = useImageGeneration();
-
   const [promptInput, setPromptInput] = useState("");
   
-  // Initialize with defaults as requested ("except the defaults that I have")
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-  const [selectedRatioId, setSelectedRatioId] = useState<string | null>("ratio-1-1");
-  
+
+  const [mockStage, setMockStage] = useState<MockStage>("selecting");
   
   // Style options with Pexels images loaded (one horizontal row)
   const [styleOptions, setStyleOptions] = useState<TattooOption[]>(() =>
@@ -86,91 +124,66 @@ export function ImagePlayground({}: {}) {
     value: "premium",
     group: "style",
   };
-  const PREMIUM_REPEAT = 28;
+  const PREMIUM_REPEAT = 300;
   const styleOptionsWithInfinitePremium: TattooOption[] = [
     ...styleOptions,
     PREMIUM_OPTION,
     ...Array(PREMIUM_REPEAT).fill(PREMIUM_OPTION),
   ];
 
-  // Color options only for mockup (no aspect ratios); center-aligned
-  const colorOptions: TattooOption[] = TATTOO_COLORS;
+  const outputSlotCount = useMemo(
+    () => Math.max(1, TATTOO_COLORS.length + MOCK_OUTPUT_STYLE_SLOTS),
+    [],
+  );
 
-  const { toast } = useToast();
+  const blockedSlots = useMemo(() => {
+    // Build the slots from existing exported options:
+    // - start with colors (they always have local images)
+    // - then take style cards (prefer ones with imageUrl already fetched)
+    const slots: Array<{ src?: string | null; alt: string; label: string }> = [];
 
-  // Surface backend / generation errors to the user instead of failing silently
-  useEffect(() => {
-    if (!errors || errors.length === 0) return;
+    for (const c of TATTOO_COLORS) {
+      slots.push({
+        src: c.imageUrl ?? null,
+        alt: c.label,
+        label: c.label,
+      });
+    }
 
-    const firstError = errors[0];
+    const styleWithImages = styleOptions.filter((s) => !!s.imageUrl);
+    for (const s of styleWithImages) {
+      if (slots.length >= outputSlotCount) break;
+      slots.push({
+        src: s.imageUrl ?? null,
+        alt: s.label,
+        label: s.label,
+      });
+    }
 
-    toast({
-      title: "Image generation failed",
-      description: firstError.error || "Something went wrong while generating your tattoo image.",
-      variant: "destructive",
-    });
-  }, [errors, toast]);
+    // If we still don't have enough (before Pexels resolves), fill from styles by label only.
+    for (const s of styleOptions) {
+      if (slots.length >= outputSlotCount) break;
+      if (slots.some((x) => x.label === s.label)) continue;
+      slots.push({
+        src: s.imageUrl ?? null,
+        alt: s.label,
+        label: s.label,
+      });
+    }
+
+    return slots.slice(0, outputSlotCount);
+  }, [outputSlotCount, styleOptions]);
 
   const handlePromptSubmit = () => {
-    const newPrompt = promptInput;
-    
-    // Validation Gates
-    if (!selectedStyleId) {
-      toast({
-        title: "Missing Style",
-        description: "Please select a tattoo style to continue.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedColorId) {
-      toast({
-        title: "Missing Color",
-        description: "Please select a color preference.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!newPrompt || newPrompt.trim().length < 10) {
-      toast({
-        title: "Answer Too Short",
-        description: "Your answer must be at least 10 characters long to generate a meaningful design.",
-        variant: "destructive",
-      });
-      return;
-    }
-    
-    const selectedStyle = TATTOO_STYLES.find(s => s.id === selectedStyleId);
-    const selectedColor = TATTOO_COLORS.find(c => c.id === selectedColorId);
-
-    const finalStyle = selectedStyle?.value ?? null;
-    const finalColor = selectedColor?.value ?? null;
-    const finalRatio = "1:1"; // mockup: fixed ratio
-
-    console.log("Submitting Generation Request:", { 
-        prompt: newPrompt, 
-        style: finalStyle, 
-        color: finalColor, 
-        ratio: finalRatio 
-    });
-
-    // Single provider, no fallbacks
-    const providers: ProviderKey[] = ["default"]; 
-    const providerToModel: Record<ProviderKey, string> = {
-        default: "dify-workflow",
-    };
-
-    startGeneration(
-      newPrompt,
-      finalStyle,
-      finalColor,
-      finalRatio,
-      providers,
-      providerToModel
-    );
+    // Mock flow only: no real generation.
+    setMockStage("generating");
   };
+
+  useEffect(() => {
+    if (mockStage !== "generating") return;
+    const t = window.setTimeout(() => setMockStage("blocked"), 8000);
+    return () => window.clearTimeout(t);
+  }, [mockStage]);
 
   const getLabelForId = (id: string | null, options: TattooOption[]) => {
     if (!id) return null;
@@ -183,130 +196,95 @@ export function ImagePlayground({}: {}) {
       {/* Prompt + controls area: full width with exactly 10px side padding */}
       <div className="px-[10px] pt-4">
         <div className="relative mb-4">
-          <div>
-            <PromptInput
+          <PromptInput
               value={promptInput}
               onChange={setPromptInput}
               onSubmit={handlePromptSubmit}
-              isLoading={isLoading}
               selectedStyle={getLabelForId(selectedStyleId, TATTOO_STYLES)}
               onClearStyle={() => setSelectedStyleId(null)}
-              selectedColor={getLabelForId(selectedColorId, TATTOO_COLORS)}
-              onClearColor={() => setSelectedColorId(null)}
-              selectedRatio={null}
-              onClearRatio={() => {}}
+              selectedColorId={selectedColorId}
+              onSelectColor={setSelectedColorId}
             />
-          </div>
         </div>
-        <div className="mt-2 space-y-4">
-          {/* Always-rendered Style carousel (16 styles + premium + repeated premium for infinite feel) */}
-          <StyleCarousel
-            visible={true}
-            options={styleOptionsWithInfinitePremium}
-            onSelect={(option) => {
-              setSelectedStyleId(option.id);
-            }}
-            selected={selectedStyleId}
-            emptyMessage="No styles available."
-          />
-
-          {/* Color options only (B&W, Full Color, Custom) – center-aligned, liquid metal cards, click-to-highlight */}
-          <StyleCarousel
-            visible={true}
-            options={colorOptions}
-            onSelect={(option) => {
-              if (option.group === "color") setSelectedColorId(option.id);
-            }}
-            selected={selectedColorId}
-            centerAlign
-            emptyMessage="No options available."
-          />
-        </div>
-
-        <div className="flex justify-center my-20 py-12 relative z-10">
-          <div className={isLoading ? "opacity-50 pointer-events-none scale-[1.75] origin-center" : "scale-[1.75] origin-center"}>
-            <LiquidMetalButton
-              label={isLoading ? "INKING..." : "INK ME UP"}
-              onClick={handlePromptSubmit}
-              viewMode="text"
-            />
-          </div>
-        </div>
-      </div>
-
-      {/* Image display area: keep layout, but overlay 2FACE.jpg with rounded corners while loading */}
-      <div className="max-w-5xl mx-auto px-4 pb-8">
-        <div className="relative max-w-4xl mx-auto mt-6">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 rounded-2xl overflow-hidden">
-            {images.length === 0 ? (
-              // Render placeholders if no images (e.g. initial state)
-              [0, 1].map((idx) => (
-                <ImageDisplay
-                  key={`placeholder-${idx}`}
-                  provider={`Slot ${idx + 1}`}
-                  image={null}
-                  modelId=""
-                  failed={false}
+        <div className="mt-2 overflow-visible">
+          <AnimatePresence mode="wait" initial={false}>
+            {mockStage === "selecting" ? (
+              <motion.div
+                key="carousel"
+                initial={{ opacity: 1, y: 0 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 8 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+              >
+                {/* Style carousel (16 styles + premium + repeated premium); glow and liquid metal not clipped */}
+                <StyleCarousel
+                  visible={true}
+                  options={styleOptionsWithInfinitePremium}
+                  onSelect={(option) => setSelectedStyleId(option.id)}
+                  selected={selectedStyleId}
+                  emptyMessage="No styles available."
                 />
-              ))
+
+                <div className="flex justify-center py-10">
+                  <LiquidMetalButton
+                    label="INK ME UP"
+                    onClick={handlePromptSubmit}
+                    viewMode="text"
+                    animate={true}
+                  />
+                </div>
+              </motion.div>
             ) : (
-              images.map((img, idx) => (
-                <ImageDisplay
-                  key={idx}
-                  provider={img.provider}
-                  image={img.image}
-                  modelId={img.modelId}
-                  timing={timings[img.provider]}
-                  failed={failedProviders.includes(img.provider)}
-                />
-              ))
-            )}
-          </div>
-
-          {/* Idle state overlay: show 2FACE image until generation starts */}
-          <AnimatePresence>
-            {images.length === 0 && !isLoading && (
               <motion.div
-                key="idle-2face"
-                initial={{ opacity: 1 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 rounded-2xl overflow-hidden bg-black/80 flex items-center justify-center z-20"
+                key="mock-output"
+                initial={{ opacity: 0, y: 10 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, y: 10 }}
+                transition={{ duration: 0.25, ease: "easeOut" }}
+                className="relative mt-6"
               >
-                <Image
-                  src="/2FACE.jpg"
-                  alt="Tattoo preview"
-                  fill
-                  className="object-cover"
-                  priority
-                />
-              </motion.div>
-            )}
-          </AnimatePresence>
+                <div className="relative">
+                  <div
+                    className={[
+                      "flex flex-nowrap gap-4 justify-center",
+                      mockStage === "blocked" ? "blur-md" : "",
+                    ].join(" ")}
+                  >
+                    {mockStage === "generating" &&
+                      Array.from({ length: outputSlotCount }).map((_, i) => (
+                        <LoadingSquare key={`loading-${i}`} />
+                      ))}
 
-          {/* Loading state overlay: fade in ModernLoader while images generate */}
-          <AnimatePresence>
-            {isLoading && (
-              <motion.div
-                key="loader-overlay"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                transition={{ duration: 0.4, ease: "easeOut" }}
-                className="absolute inset-0 rounded-2xl overflow-hidden bg-black/90 flex items-center justify-center z-30"
-              >
-                <ModernLoader />
+                    {mockStage === "blocked" &&
+                      blockedSlots.map((slot, i) => (
+                        <BlurredPresetSquare
+                          key={`${slot.label}-${i}`}
+                          src={slot.src}
+                          alt={slot.alt}
+                          label={slot.label}
+                        />
+                      ))}
+                  </div>
+
+                  {mockStage === "blocked" && (
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <div className="rounded-2xl bg-black/55 backdrop-blur-xl border border-white/10 p-6 shadow-2xl">
+                        <LiquidMetalButton
+                          label="SUBSCRIBE NOW TO CONTINUE"
+                          onClick={() => {
+                            window.location.href = "/subscribe";
+                          }}
+                          viewMode="text"
+                          animate={true}
+                        />
+                      </div>
+                    </div>
+                  )}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
         </div>
-
-        {activePrompt && activePrompt.length > 0 && (
-          <div className="text-center mt-4 text-muted-foreground">
-            {activePrompt}
-          </div>
-        )}
       </div>
     </div>
   );

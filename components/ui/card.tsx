@@ -98,3 +98,4 @@ export {
   CardDescription,
   CardContent,
 };
+export { CHROME_GLOW } from "@/lib/chrome-glow";

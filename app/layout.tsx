@@ -24,10 +24,15 @@ const orbitron = Orbitron({
  });
  
 export const metadata: Metadata = {
-  title: "Tattty – Tattoo image generator widget",
-  description: "Tattty tattoo image generator widget for embedding on tattty.com and other sites.",
+  title: "Tattty – Mock demo",
+  description: "Tattty tattoo style mockup and demo for mock.tattty.com.",
   applicationName: "Tattty",
-  metadataBase: new URL("https://widget.tattty.com"),
+  metadataBase: new URL("https://mock.tattty.com"),
+  openGraph: {
+    title: "Tattty – Mock demo",
+    description: "Tattty tattoo style mockup and demo for mock.tattty.com.",
+    url: "https://mock.tattty.com",
+  },
 };
  
  export default function RootLayout({

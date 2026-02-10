@@ -1,5 +1,8 @@
 import { TattooOption } from "@/lib/api-types";
 
+/** Number of style slots to show in mock output grid (with TATTOO_COLORS). */
+export const MOCK_OUTPUT_STYLE_SLOTS = 2;
+
 export const TATTOO_STYLES: TattooOption[] = [
   {
     id: "neo-traditional",

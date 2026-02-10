@@ -10,7 +10,7 @@ import {
   CarouselPrevious,
 } from "@/components/ui/carousel";
 import { ImageDisplay } from "./ImageDisplay";
-import { LiquidMetalCard } from "@/components/ui/liquid-metal-card";
+import { Card, CHROME_GLOW } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
 import { ProviderKey } from "@/lib/provider-config";
 import { ImageResult, ProviderTiming } from "@/lib/image-types";
@@ -58,34 +58,28 @@ export function ImageCarousel(props: Readonly<ImageCarouselProps>) {
 
             return (
               <CarouselItem key={provider}>
-                <div
+                <Card
                   className={cn(
-                    "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-200 border-[4px] border-transparent",
-                    isSelected
-                      ? "border-[#e879f9] ring-[4px] ring-[#e879f9] ring-offset-4 ring-offset-black shadow-[0_0_30px_rgba(232,121,249,0.9)] scale-[1.02]"
-                      : ""
+                    "relative w-full aspect-square rounded-xl overflow-hidden !p-0 !py-0 !gap-0 transition-all duration-200",
+                    isSelected && "scale-[1.02]",
                   )}
+                  style={{ boxShadow: isSelected ? CHROME_GLOW.selected : CHROME_GLOW.default }}
                   data-selected={isSelected ? "true" : undefined}
                 >
-                  <LiquidMetalCard
-                    speed={0.6}
-                    className="w-full h-full p-[3px] rounded-[calc(1rem-1px)]"
-                  >
-                    <div className="relative w-full h-full rounded-[calc(1rem-2px)] overflow-hidden">
-                      <ImageDisplay
-                        modelId={
-                          images?.find((img) => img.provider === provider)?.modelId ||
-                          providerToModel[provider]
-                        }
-                        provider={provider}
-                        image={imageData}
-                        timing={timing}
-                        failed={failedProviders.includes(provider)}
-                        enabled={enabledProviders[provider]}
-                      />
-                    </div>
-                  </LiquidMetalCard>
-                </div>
+                  <div className="relative w-full h-full rounded-[calc(1rem-2px)] overflow-hidden">
+                    <ImageDisplay
+                      modelId={
+                        images?.find((img) => img.provider === provider)?.modelId ||
+                        providerToModel[provider]
+                      }
+                      provider={provider}
+                      image={imageData}
+                      timing={timing}
+                      failed={failedProviders.includes(provider)}
+                      enabled={enabledProviders[provider]}
+                    />
+                  </div>
+                </Card>
                 <div className="text-center text-sm text-muted-foreground mt-4">
                   {i + 1} of {providers.length}
                 </div>

@@ -3,6 +3,15 @@
 @tailwind utilities;
 
 @layer utilities {
+  @keyframes shimmer {
+    0% {
+      background-position: -200% 0;
+    }
+    100% {
+      background-position: 200% 0;
+    }
+  }
+
   .text-balance {
     text-wrap: balance;
   }
@@ -14,12 +23,12 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
-  /* horizontal scroll that works on touch devices (e.g. mobile) */
+  /* horizontal scroll that works on touch devices (e.g. mobile); overflow-y visible so card glow isn't clipped */
   .scroll-touch-x {
     -webkit-overflow-scrolling: touch;
     touch-action: pan-x;
     overflow-x: auto;
-    overflow-y: hidden;
+    overflow-y: visible;
   }
 }
 

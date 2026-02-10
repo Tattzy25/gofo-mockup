@@ -2,46 +2,37 @@
 
 import React, { useState } from "react";
 import Image from "next/image";
-import { LiquidMetalCard } from "@/components/ui/liquid-metal-card";
+import { Card, CHROME_GLOW } from "@/components/ui/card";
 import { TattooOption } from "@/lib/api-types";
 
 const SUBSCRIBE_URL = "/subscribe";
 
-/** Premium card: same liquid metal wrapper as style/color cards, art background + Subscribe Now CTA */
+/** Premium card: same height as style cards (w-48 aspect-[4/5]), Subscribe button below the card */
 function PremiumCard() {
   return (
-    <div
-      className="flex flex-shrink-0 w-48 flex flex-col items-center gap-3"
-      aria-hidden
-    >
-      <div
-        className="relative w-48 aspect-[4/5] rounded-lg overflow-hidden"
-        style={{
-          boxShadow:
-            "0px 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 36px 14px 0px rgba(0, 0, 0, 0.02), 0px 20px 12px 0px rgba(0, 0, 0, 0.08), 0px 9px 9px 0px rgba(0, 0, 0, 0.12), 0px 2px 5px 0px rgba(0, 0, 0, 0.15)",
-          transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
-        }}
+    <div className="flex flex-shrink-0 w-48 flex flex-col items-center gap-3" role="group" aria-label="Premium – subscribe for more styles">
+      <Card
+        className="relative w-48 aspect-[4/5] rounded-lg overflow-hidden !p-0 !py-0 !gap-0"
+        style={{ boxShadow: CHROME_GLOW.default, transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)" }}
+        aria-hidden="true"
       >
-        <LiquidMetalCard speed={0.25} className="w-full h-full !p-0 rounded-xl">
-          <div className="relative w-full h-full rounded-[calc(1rem-1px)] overflow-hidden">
-            <Image
-              src="/PremiumCard.png"
-              alt="Premium"
-              fill
-              sizes="192px"
-              className="object-cover"
-            />
-            <div className="absolute inset-0 bg-black/35 flex flex-col justify-end p-2">
-              <a
-                href={SUBSCRIBE_URL}
-                className="font-orbitron w-full py-2.5 rounded-full bg-white text-black font-bold text-sm text-center tracking-wide hover:bg-neutral-100 transition-colors shadow-lg"
-              >
-                Subscribe Now
-              </a>
-            </div>
-          </div>
-        </LiquidMetalCard>
-      </div>
+        <div className="absolute inset-0 rounded-lg overflow-hidden">
+          <Image
+            src="/PremiumCard.png"
+            alt="Premium"
+            fill
+            sizes="192px"
+            className="object-cover"
+          />
+        </div>
+      </Card>
+      <a
+        href={SUBSCRIBE_URL}
+        className="font-orbitron w-full py-2 rounded-full bg-white text-black font-bold text-xs text-center tracking-wide hover:bg-neutral-100 transition-colors shadow-md border border-black/10"
+        aria-label="Subscribe now for more styles"
+      >
+        Subscribe Now
+      </a>
     </div>
   );
 }
@@ -57,12 +48,11 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
   const [isHovered, setIsHovered] = useState(false);
   const [isPressed, setIsPressed] = useState(false);
 
-  // Shadow logic copied from LiquidMetalButton to match the effect
   const boxShadow = isSelected
-    ? "0px 0px 0px 1px rgba(0, 0, 0, 0.5), 0px 1px 2px 0px rgba(0, 0, 0, 0.3)"
+    ? CHROME_GLOW.selected
     : isHovered
-      ? "0px 0px 0px 1px rgba(0, 0, 0, 0.4), 0px 12px 6px 0px rgba(0, 0, 0, 0.05), 0px 8px 5px 0px rgba(0, 0, 0, 0.1), 0px 4px 4px 0px rgba(0, 0, 0, 0.15), 0px 1px 2px 0px rgba(0, 0, 0, 0.2)"
-      : "0px 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 36px 14px 0px rgba(0, 0, 0, 0.02), 0px 20px 12px 0px rgba(0, 0, 0, 0.08), 0px 9px 9px 0px rgba(0, 0, 0, 0.12), 0px 2px 5px 0px rgba(0, 0, 0, 0.15)";
+      ? CHROME_GLOW.hover
+      : CHROME_GLOW.default;
 
   return (
     <button
@@ -85,40 +75,29 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
         ${selectedClassName ?? ""}
       `}
     >
-      <div 
-        className={`
-          relative w-48 aspect-[4/5] rounded-lg overflow-hidden transition-all duration-200
-          border-[4px] border-transparent
-          ${isSelected
-            ? "border-[#e879f9] ring-[4px] ring-[#e879f9] ring-offset-4 ring-offset-black shadow-[0_0_30px_rgba(232,121,249,0.9)]"
-            : ""}
-        `}
+      <Card
+        className="relative w-48 aspect-[4/5] rounded-lg overflow-hidden !p-0 !py-0 !gap-0"
         style={{
-          boxShadow: boxShadow,
-          transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)"
+          boxShadow,
+          transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
         }}
       >
-        <LiquidMetalCard
-          speed={isSelected || isHovered ? 0.6 : 0.25}
-          className="w-full h-full !p-0 rounded-xl"
-        >
-          <div className="relative w-full h-full rounded-[calc(1rem-1px)] overflow-hidden bg-muted">
-            {option.imageUrl ? (
-              <Image
-                src={option.imageUrl}
-                alt={option.label}
-                fill
-                sizes="(min-width: 1024px) 160px, 128px"
-                className="object-cover"
-              />
-            ) : (
-              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs font-medium">
-                {option.label || "—"}
-              </div>
-            )}
-          </div>
-        </LiquidMetalCard>
-      </div>
+        <div className="absolute inset-0 rounded-lg overflow-hidden">
+          {option.imageUrl ? (
+            <Image
+              src={option.imageUrl}
+              alt={option.label}
+              fill
+              sizes="(min-width: 1024px) 160px, 128px"
+              className="object-cover"
+            />
+          ) : (
+            <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs font-medium">
+              {option.label || "—"}
+            </div>
+          )}
+        </div>
+      </Card>
       <span className={`
         text-[20px] md:text-[20px] leading-tight font-medium tracking-wide transition-colors duration-200
         ${isSelected ? "text-primary font-bold" : "text-muted-foreground group-hover:text-foreground"}
@@ -155,21 +134,17 @@ export function StyleCarousel({
 
   if (!options || options.length === 0) {
     return (
-      <div className="mt-4">
-        <div className="text-sm text-muted-foreground px-2">
-          {emptyMessage ?? "No options available."}
-        </div>
+      <div className="mt-4 text-sm text-muted-foreground px-2">
+        {emptyMessage ?? "No options available."}
       </div>
     );
   }
 
   return (
-    <div className="mt-4 w-full min-w-0">
-      <div className="scroll-touch-x hide-scrollbar scroll-smooth w-full">
-        {/* Single row, horizontal scroll on all breakpoints (mobile + desktop) */}
-        <div
-          className={`flex flex-nowrap gap-4 md:gap-6 px-2 sm:px-4 py-[10px] w-max min-w-full ${centerAlign ? "justify-center" : ""}`}
-        >
+    <div className="mt-4 w-full min-w-0 scroll-touch-x hide-scrollbar scroll-smooth overflow-y-visible">
+      <div
+        className={`flex flex-nowrap gap-4 md:gap-6 px-2 sm:px-4 py-8 w-max min-w-full ${centerAlign ? "justify-center" : ""}`}
+      >
           {options.map((option, index) => {
             if (option.id === "premium") {
               return <PremiumCard key={`premium-${index}`} />;
@@ -196,7 +171,6 @@ export function StyleCarousel({
               />
             );
           })}
-        </div>
       </div>
     </div>
   );
