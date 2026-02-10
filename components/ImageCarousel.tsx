@@ -66,19 +66,17 @@ export function ImageCarousel(props: Readonly<ImageCarouselProps>) {
                   style={{ boxShadow: isSelected ? CHROME_GLOW.selected : CHROME_GLOW.default }}
                   data-selected={isSelected ? "true" : undefined}
                 >
-                  <div className="relative w-full h-full rounded-[calc(1rem-2px)] overflow-hidden">
-                    <ImageDisplay
-                      modelId={
-                        images?.find((img) => img.provider === provider)?.modelId ||
-                        providerToModel[provider]
-                      }
-                      provider={provider}
-                      image={imageData}
-                      timing={timing}
-                      failed={failedProviders.includes(provider)}
-                      enabled={enabledProviders[provider]}
-                    />
-                  </div>
+                  <ImageDisplay
+                    modelId={
+                      images?.find((img) => img.provider === provider)?.modelId ||
+                      providerToModel[provider]
+                    }
+                    provider={provider}
+                    image={imageData}
+                    timing={timing}
+                    failed={failedProviders.includes(provider)}
+                    enabled={enabledProviders[provider]}
+                  />
                 </Card>
                 <div className="text-center text-sm text-muted-foreground mt-4">
                   {i + 1} of {providers.length}

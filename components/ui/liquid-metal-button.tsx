@@ -10,9 +10,25 @@ interface LiquidMetalButtonProps {
   viewMode?: "text" | "icon"
   animate?: boolean
   icon?: React.ReactNode
+  interactive?: boolean
+  width?: number
+  height?: number
+  textSize?: number
+  textFontFamily?: string
 }
 
-export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "text", animate = true, icon }: LiquidMetalButtonProps) {
+export function LiquidMetalButton({
+  label = "Get Started",
+  onClick,
+  viewMode = "text",
+  animate = true,
+  icon,
+  interactive = true,
+  width,
+  height,
+  textSize,
+  textFontFamily,
+}: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
@@ -32,16 +48,18 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
         shaderHeight: 46,
       }
     } else {
+      const textWidth = width ?? 142
+      const textHeight = height ?? 46
       return {
-        width: 142,
-        height: 46,
-        innerWidth: 138,
-        innerHeight: 42,
-        shaderWidth: 142,
-        shaderHeight: 46,
+        width: textWidth,
+        height: textHeight,
+        innerWidth: Math.max(42, textWidth - 4),
+        innerHeight: Math.max(36, textHeight - 4),
+        shaderWidth: textWidth,
+        shaderHeight: textHeight,
       }
     }
-  }, [viewMode])
+  }, [viewMode, width, height])
 
   useEffect(() => {
     const styleId = "shader-canvas-style-exploded"
@@ -131,7 +149,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
     }
   }
 
-  const handleClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+  const handleClick = (e: React.MouseEvent<HTMLElement>) => {
     if (shaderMount.current?.setSpeed && animate) {
       shaderMount.current.setSpeed(2.4)
       setTimeout(() => {
@@ -143,8 +161,7 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
       }, 300)
     }
 
-    if (buttonRef.current) {
-      const rect = buttonRef.current.getBoundingClientRect()
+    const rect = e.currentTarget.getBoundingClientRect()
       const x = e.clientX - rect.left
       const y = e.clientY - rect.top
       const ripple = { x, y, id: rippleId.current++ }
@@ -153,7 +170,6 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
       setTimeout(() => {
         setRipples((prev) => prev.filter((r) => r.id !== ripple.id))
       }, 600)
-    }
 
     onClick?.()
   }
@@ -225,9 +241,10 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
             {viewMode === "text" && (
               <span
                 style={{
-                  fontSize: "14px",
+                  fontSize: `${textSize ?? 14}px`,
                   color: "#FFFFFF",
                   fontWeight: 400,
+                  fontFamily: textFontFamily ?? "inherit",
                   textShadow: "0px 1px 2px rgba(0, 0, 0, 0.5)",
                   transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1)",
                   transform: "scale(1)",
@@ -312,49 +329,75 @@ export function LiquidMetalButton({ label = "Get Started", onClick, viewMode = "
             </div>
           </div>
 
-          <button
-            ref={buttonRef}
-            onClick={handleClick}
-            onMouseEnter={handleMouseEnter}
-            onMouseLeave={handleMouseLeave}
-            onMouseDown={() => setIsPressed(true)}
-            onMouseUp={() => setIsPressed(false)}
-            style={{
-              position: "absolute",
-              top: 0,
-              left: 0,
-              width: `${dimensions.width}px`,
-              height: `${dimensions.height}px`,
-              background: "transparent",
-              border: "none",
-              cursor: "pointer",
-              outline: "none",
-              zIndex: 40,
-              transformStyle: "preserve-3d",
-              transform: "translateZ(25px)",
-              transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
-              overflow: "hidden",
-              borderRadius: "100px",
-            }}
-            aria-label={label}
-          >
-            {ripples.map((ripple) => (
-              <span
-                key={ripple.id}
-                style={{
-                  position: "absolute",
-                  left: `${ripple.x}px`,
-                  top: `${ripple.y}px`,
-                  width: "20px",
-                  height: "20px",
-                  borderRadius: "50%",
-                  background: "radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%)",
-                  pointerEvents: "none",
-                  animation: "ripple-animation 0.6s ease-out",
-                }}
-              />
-            ))}
-          </button>
+          {interactive ? (
+            <button
+              ref={buttonRef}
+              onClick={handleClick}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onMouseDown={() => setIsPressed(true)}
+              onMouseUp={() => setIsPressed(false)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${dimensions.width}px`,
+                height: `${dimensions.height}px`,
+                background: "transparent",
+                border: "none",
+                cursor: "pointer",
+                outline: "none",
+                zIndex: 40,
+                transformStyle: "preserve-3d",
+                transform: "translateZ(25px)",
+                transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
+                overflow: "hidden",
+                borderRadius: "100px",
+              }}
+              aria-label={label}
+            >
+              {ripples.map((ripple) => (
+                <span
+                  key={ripple.id}
+                  style={{
+                    position: "absolute",
+                    left: `${ripple.x}px`,
+                    top: `${ripple.y}px`,
+                    width: "20px",
+                    height: "20px",
+                    borderRadius: "50%",
+                    background: "radial-gradient(circle, rgba(255, 255, 255, 0.4) 0%, rgba(255, 255, 255, 0) 70%)",
+                    pointerEvents: "none",
+                    animation: "ripple-animation 0.6s ease-out",
+                  }}
+                />
+              ))}
+            </button>
+          ) : (
+            <div
+              aria-hidden="true"
+              onClick={handleClick}
+              onMouseEnter={handleMouseEnter}
+              onMouseLeave={handleMouseLeave}
+              onMouseDown={() => setIsPressed(true)}
+              onMouseUp={() => setIsPressed(false)}
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                width: `${dimensions.width}px`,
+                height: `${dimensions.height}px`,
+                background: "transparent",
+                zIndex: 40,
+                transformStyle: "preserve-3d",
+                transform: "translateZ(25px)",
+                transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
+                overflow: "hidden",
+                borderRadius: "100px",
+                cursor: "pointer",
+              }}
+            />
+          )}
         </div>
       </div>
     </div>

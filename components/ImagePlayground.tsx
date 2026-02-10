@@ -1,14 +1,15 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import Image from "next/image";
 import { PromptInput } from "@/components/PromptInput";
 import { StyleCarousel } from "@/components/StyleCarousel";
 import { TATTOO_STYLES, MOCK_OUTPUT_STYLE_SLOTS } from "@/components/Tattoo-Styles/config";
 import { TATTOO_COLORS } from "@/components/Tattoo Colors/config";
 import { TattooOption } from "@/lib/api-types";
-import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { Card, CHROME_GLOW } from "@/components/ui/card";
-import Image from "next/image";
+import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import { AnimatePresence, motion } from "framer-motion";
 
 type MockStage = "selecting" | "generating" | "blocked";
@@ -16,12 +17,12 @@ type MockStage = "selecting" | "generating" | "blocked";
 function LoadingSquare() {
   return (
     <Card
-      className="relative w-40 sm:w-44 md:w-48 aspect-square rounded-2xl !p-0 !py-0 !gap-0 bg-black/40 overflow-hidden"
+      className="relative flex-1 min-w-0 aspect-square rounded-xl !p-0 !py-0 !gap-0 overflow-hidden bg-[var(--card)]"
       style={{ boxShadow: CHROME_GLOW.default }}
     >
-      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent animate-[shimmer_1.25s_infinite] [background-size:200%_100%]" />
+      <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[color-mix(in_oklch,var(--foreground)_10%,transparent)] to-transparent animate-[shimmer_1.25s_infinite] [background-size:200%_100%]" />
       <div className="absolute inset-0 flex items-center justify-center">
-        <div className="h-6 w-6 rounded-full border-2 border-white/30 border-t-white/80 animate-spin" />
+        <div className="h-6 w-6 rounded-full border-2 border-[color-mix(in_oklch,var(--foreground)_30%,transparent)] border-t-[color-mix(in_oklch,var(--foreground)_80%,transparent)] animate-spin" />
       </div>
     </Card>
   );
@@ -38,7 +39,7 @@ function BlurredPresetSquare({
 }) {
   return (
     <Card
-      className="relative w-40 sm:w-44 md:w-48 aspect-square rounded-2xl !p-0 !py-0 !gap-0 bg-black/40 overflow-hidden"
+      className="relative flex-1 min-w-0 aspect-square rounded-xl !p-0 !py-0 !gap-0 overflow-hidden bg-[var(--card)]"
       style={{ boxShadow: CHROME_GLOW.default }}
     >
       {src ? (
@@ -51,16 +52,15 @@ function BlurredPresetSquare({
             className="object-cover blur-xl scale-110 opacity-90"
             priority
           />
-          <div className="absolute inset-0 bg-black/35" />
+          <div className="absolute inset-0 bg-[color-mix(in_oklch,var(--foreground)_35%,transparent)]" />
         </>
       ) : (
         <>
-          <div className="absolute inset-0 bg-[radial-gradient(circle_at_30%_20%,rgba(255,255,255,0.12),transparent_55%),radial-gradient(circle_at_70%_80%,rgba(180,200,255,0.14),transparent_60%),linear-gradient(180deg,rgba(20,20,20,0.25),rgba(0,0,0,0.55))]" />
-          <div className="absolute inset-0 bg-black/30" />
+          <div className="absolute inset-0 bg-[var(--muted)]" />
           <div className="absolute inset-0 flex items-center justify-center px-4">
-            <div className="text-white/55 text-sm font-medium tracking-wide blur-[1px] select-none text-center">
+            <span className="text-sm font-medium tracking-wide select-none text-center text-[var(--muted-foreground)] opacity-90">
               {label}
-            </div>
+            </span>
           </div>
         </>
       )}
@@ -70,13 +70,10 @@ function BlurredPresetSquare({
 
 export function ImagePlayground({}: {}) {
   const [promptInput, setPromptInput] = useState("");
-  
-  const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
-  const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-
+  const [selectedStyleId, setSelectedStyleId] = useState<string | null>("blackwork");
+  const [selectedColorId, setSelectedColorId] = useState<string | null>("black-white");
   const [mockStage, setMockStage] = useState<MockStage>("selecting");
-  
-  // Style options with Pexels images loaded (one horizontal row)
+
   const [styleOptions, setStyleOptions] = useState<TattooOption[]>(() =>
     TATTOO_STYLES.map((s) => ({ ...s }))
   );
@@ -117,14 +114,13 @@ export function ImagePlayground({}: {}) {
     };
   }, []);
 
-  // Premium teaser card (after 16 styles) + many copies for infinite-scroll feel
   const PREMIUM_OPTION: TattooOption = {
     id: "premium",
     label: "Premium",
     value: "premium",
     group: "style",
   };
-  const PREMIUM_REPEAT = 300;
+  const PREMIUM_REPEAT = 28;
   const styleOptionsWithInfinitePremium: TattooOption[] = [
     ...styleOptions,
     PREMIUM_OPTION,
@@ -137,45 +133,24 @@ export function ImagePlayground({}: {}) {
   );
 
   const blockedSlots = useMemo(() => {
-    // Build the slots from existing exported options:
-    // - start with colors (they always have local images)
-    // - then take style cards (prefer ones with imageUrl already fetched)
     const slots: Array<{ src?: string | null; alt: string; label: string }> = [];
-
     for (const c of TATTOO_COLORS) {
-      slots.push({
-        src: c.imageUrl ?? null,
-        alt: c.label,
-        label: c.label,
-      });
+      slots.push({ src: c.imageUrl ?? null, alt: c.label, label: c.label });
     }
-
     const styleWithImages = styleOptions.filter((s) => !!s.imageUrl);
     for (const s of styleWithImages) {
       if (slots.length >= outputSlotCount) break;
-      slots.push({
-        src: s.imageUrl ?? null,
-        alt: s.label,
-        label: s.label,
-      });
+      slots.push({ src: s.imageUrl ?? null, alt: s.label, label: s.label });
     }
-
-    // If we still don't have enough (before Pexels resolves), fill from styles by label only.
     for (const s of styleOptions) {
       if (slots.length >= outputSlotCount) break;
       if (slots.some((x) => x.label === s.label)) continue;
-      slots.push({
-        src: s.imageUrl ?? null,
-        alt: s.label,
-        label: s.label,
-      });
+      slots.push({ src: s.imageUrl ?? null, alt: s.label, label: s.label });
     }
-
     return slots.slice(0, outputSlotCount);
   }, [outputSlotCount, styleOptions]);
 
   const handlePromptSubmit = () => {
-    // Mock flow only: no real generation.
     setMockStage("generating");
   };
 
@@ -187,24 +162,23 @@ export function ImagePlayground({}: {}) {
 
   const getLabelForId = (id: string | null, options: TattooOption[]) => {
     if (!id) return null;
-    const opt = options.find(o => o.id === id);
-    return opt?.label || null;
+    const opt = options.find((o) => o.id === id);
+    return opt?.label ?? null;
   };
 
   return (
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Prompt + controls area: full width with exactly 10px side padding */}
+    <div className="min-h-screen rounded-[40px] overflow-hidden bg-[var(--background)] text-[var(--foreground)]">
       <div className="px-[10px] pt-4">
         <div className="relative mb-4">
           <PromptInput
-              value={promptInput}
-              onChange={setPromptInput}
-              onSubmit={handlePromptSubmit}
-              selectedStyle={getLabelForId(selectedStyleId, TATTOO_STYLES)}
-              onClearStyle={() => setSelectedStyleId(null)}
-              selectedColorId={selectedColorId}
-              onSelectColor={setSelectedColorId}
-            />
+            value={promptInput}
+            onChange={setPromptInput}
+            onSubmit={handlePromptSubmit}
+            selectedStyle={getLabelForId(selectedStyleId, TATTOO_STYLES)}
+            onClearStyle={() => setSelectedStyleId(null)}
+            selectedColorId={selectedColorId}
+            onSelectColor={setSelectedColorId}
+          />
         </div>
         <div className="mt-2 overflow-visible">
           <AnimatePresence mode="wait" initial={false}>
@@ -216,7 +190,6 @@ export function ImagePlayground({}: {}) {
                 exit={{ opacity: 0, y: 8 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
               >
-                {/* Style carousel (16 styles + premium + repeated premium); glow and liquid metal not clipped */}
                 <StyleCarousel
                   visible={true}
                   options={styleOptionsWithInfinitePremium}
@@ -224,13 +197,16 @@ export function ImagePlayground({}: {}) {
                   selected={selectedStyleId}
                   emptyMessage="No styles available."
                 />
-
                 <div className="flex justify-center py-10">
                   <LiquidMetalButton
                     label="INK ME UP"
                     onClick={handlePromptSubmit}
                     viewMode="text"
                     animate={true}
+                    width={300}
+                    height={68}
+                    textSize={24}
+                    textFontFamily="var(--font-rock-salt)"
                   />
                 </div>
               </motion.div>
@@ -241,12 +217,12 @@ export function ImagePlayground({}: {}) {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: 10 }}
                 transition={{ duration: 0.25, ease: "easeOut" }}
-                className="relative mt-6"
+                className="relative mt-6 -mx-[10px] w-[calc(100%+20px)]"
               >
                 <div className="relative">
                   <div
                     className={[
-                      "flex flex-nowrap gap-4 justify-center",
+                      "flex w-full flex-nowrap gap-1 sm:gap-2",
                       mockStage === "blocked" ? "blur-md" : "",
                     ].join(" ")}
                   >
@@ -254,7 +230,6 @@ export function ImagePlayground({}: {}) {
                       Array.from({ length: outputSlotCount }).map((_, i) => (
                         <LoadingSquare key={`loading-${i}`} />
                       ))}
-
                     {mockStage === "blocked" &&
                       blockedSlots.map((slot, i) => (
                         <BlurredPresetSquare
@@ -268,15 +243,16 @@ export function ImagePlayground({}: {}) {
 
                   {mockStage === "blocked" && (
                     <div className="absolute inset-0 flex items-center justify-center">
-                      <div className="rounded-2xl bg-black/55 backdrop-blur-xl border border-white/10 p-6 shadow-2xl">
-                        <LiquidMetalButton
-                          label="SUBSCRIBE NOW TO CONTINUE"
-                          onClick={() => {
-                            window.location.href = "/subscribe";
-                          }}
-                          viewMode="text"
-                          animate={true}
-                        />
+                      <div className="rounded-2xl border border-[var(--border)] p-6 shadow-2xl backdrop-blur-xl bg-[color-mix(in_oklch,var(--background)_55%,transparent)]">
+                        <Link href="/subscribe" className="inline-block" aria-label="Subscribe now to continue">
+                          <LiquidMetalButton
+                            label="SUBSCRIBE NOW TO CONTINUE"
+                            viewMode="text"
+                            animate={false}
+                            interactive={false}
+                            width={320}
+                          />
+                        </Link>
                       </div>
                     </div>
                   )}

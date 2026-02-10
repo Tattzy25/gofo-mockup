@@ -28,7 +28,7 @@ function PremiumCard() {
       </Card>
       <a
         href={SUBSCRIBE_URL}
-        className="font-orbitron w-full py-2 rounded-full bg-white text-black font-bold text-xs text-center tracking-wide hover:bg-neutral-100 transition-colors shadow-md border border-black/10"
+        className="font-orbitron w-full py-2 rounded-full font-bold text-xs text-center tracking-wide transition-colors shadow-md bg-[var(--card)] text-[var(--card-foreground)] border border-[var(--border)] hover:bg-[var(--muted)]"
         aria-label="Subscribe now for more styles"
       >
         Subscribe Now
@@ -76,7 +76,7 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
       `}
     >
       <Card
-        className="relative w-48 aspect-[4/5] rounded-lg overflow-hidden !p-0 !py-0 !gap-0"
+        className={`relative w-48 aspect-[4/5] rounded-lg overflow-hidden !p-0 !py-0 !gap-0 ${isSelected ? "!ring-2 !ring-black !ring-offset-2 ring-offset-[var(--background)]" : "ring-0"}`}
         style={{
           boxShadow,
           transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
