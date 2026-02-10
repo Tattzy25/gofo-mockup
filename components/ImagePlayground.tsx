@@ -6,8 +6,6 @@ import { AnimatePresence, motion } from "framer-motion";
 import { ImageDisplay } from "@/components/ImageDisplay";
 import { PromptInput } from "@/components/PromptInput";
 import { StyleCarousel } from "@/components/StyleCarousel";
-import { CustomStyleInput } from "@/components/CustomStyleInput/CustomStyleInput";
-import { WelcomeOverlay } from "@/components/WelcomeOverlay/WelcomeOverlay";
 import { ProviderKey } from "@/lib/provider-config";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
 import ModernLoader from "@/components/ui/modern-loader";
@@ -19,9 +17,6 @@ import {
 import { 
   TATTOO_COLORS 
 } from "@/components/Tattoo Colors/config";
-import { 
-  TATTOO_RATIOS 
-} from "@/components/Tattoo Aspect Ratio/config";
 import { TattooOption } from "@/lib/api-types";
 
 export function ImagePlayground({}: {}) {
@@ -40,23 +35,66 @@ export function ImagePlayground({}: {}) {
   // Initialize with defaults as requested ("except the defaults that I have")
   const [selectedStyleId, setSelectedStyleId] = useState<string | null>(null);
   const [selectedColorId, setSelectedColorId] = useState<string | null>(null);
-  const [selectedRatioId, setSelectedRatioId] = useState<string | null>(null);
+  const [selectedRatioId, setSelectedRatioId] = useState<string | null>("ratio-1-1");
   
-  const [customStyle, setCustomStyle] = useState<string | null>(null);
-  const [customColor, setCustomColor] = useState<string | null>(null);
   
-  const [isActivated, setIsActivated] = useState(false);
+  // Style options with Pexels images loaded (one horizontal row)
+  const [styleOptions, setStyleOptions] = useState<TattooOption[]>(() =>
+    TATTOO_STYLES.map((s) => ({ ...s }))
+  );
 
-  // Combine colors and ratios for the vibe carousel
-  const dividerOption: TattooOption = {
-    id: "divider",
-    label: "",
-    value: "divider",
-    imageUrl: "/divider-sign.png",
-    group: "divider"
+  useEffect(() => {
+    const styleOptionsToFetch = TATTOO_STYLES.filter(
+      (s) => s.value && s.value !== "Custom" && !s.imageUrl
+    );
+    if (styleOptionsToFetch.length === 0) return;
+
+    let cancelled = false;
+    const fetchOne = async (option: TattooOption): Promise<{ id: string; imageUrl: string | null }> => {
+      try {
+        const res = await fetch(
+          `/api/pexels/photo?style=${encodeURIComponent(option.value)}`
+        );
+        if (!res.ok) return { id: option.id, imageUrl: null };
+        const data = await res.json();
+        return { id: option.id, imageUrl: data.imageUrl ?? null };
+      } catch {
+        return { id: option.id, imageUrl: null };
+      }
+    };
+
+    Promise.all(styleOptionsToFetch.map(fetchOne)).then((results) => {
+      if (cancelled) return;
+      setStyleOptions((prev) =>
+        prev.map((opt) => {
+          const found = results.find((r) => r.id === opt.id);
+          if (!found) return opt;
+          return { ...opt, imageUrl: found.imageUrl ?? undefined };
+        })
+      );
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Premium teaser card (after 16 styles) + many copies for infinite-scroll feel
+  const PREMIUM_OPTION: TattooOption = {
+    id: "premium",
+    label: "Premium",
+    value: "premium",
+    group: "style",
   };
+  const PREMIUM_REPEAT = 28;
+  const styleOptionsWithInfinitePremium: TattooOption[] = [
+    ...styleOptions,
+    PREMIUM_OPTION,
+    ...Array(PREMIUM_REPEAT).fill(PREMIUM_OPTION),
+  ];
 
-  const vibeOptions: TattooOption[] = [...TATTOO_COLORS, dividerOption, ...TATTOO_RATIOS];
+  // Color options only for mockup (no aspect ratios); center-aligned
+  const colorOptions: TattooOption[] = TATTOO_COLORS;
 
   const { toast } = useToast();
 
@@ -77,7 +115,7 @@ export function ImagePlayground({}: {}) {
     const newPrompt = promptInput;
     
     // Validation Gates
-    if (!selectedStyleId && !customStyle) {
+    if (!selectedStyleId) {
       toast({
         title: "Missing Style",
         description: "Please select a tattoo style to continue.",
@@ -86,19 +124,10 @@ export function ImagePlayground({}: {}) {
       return;
     }
 
-    if (!selectedColorId && !customColor) {
+    if (!selectedColorId) {
       toast({
         title: "Missing Color",
         description: "Please select a color preference.",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    if (!selectedRatioId) {
-      toast({
-        title: "Missing Aspect Ratio",
-        description: "Please select an aspect ratio.",
         variant: "destructive",
       });
       return;
@@ -115,11 +144,10 @@ export function ImagePlayground({}: {}) {
     
     const selectedStyle = TATTOO_STYLES.find(s => s.id === selectedStyleId);
     const selectedColor = TATTOO_COLORS.find(c => c.id === selectedColorId);
-    const selectedRatio = TATTOO_RATIOS.find(r => r.id === selectedRatioId);
 
-    const finalStyle = (selectedStyle?.isCustom ? customStyle : selectedStyle?.value) ?? null;
-    const finalColor = (selectedColor?.isCustom ? customColor : selectedColor?.value) ?? null;
-    const finalRatio = selectedRatio?.value ?? null;
+    const finalStyle = selectedStyle?.value ?? null;
+    const finalColor = selectedColor?.value ?? null;
+    const finalRatio = "1:1"; // mockup: fixed ratio
 
     console.log("Submitting Generation Request:", { 
         prompt: newPrompt, 
@@ -155,39 +183,26 @@ export function ImagePlayground({}: {}) {
       {/* Prompt + controls area: full width with exactly 10px side padding */}
       <div className="px-[10px] pt-4">
         <div className="relative mb-4">
-          <AnimatePresence>
-            {!isActivated && (
-              <WelcomeOverlay onActivate={() => setIsActivated(true)} />
-            )}
-          </AnimatePresence>
-          
-          <div className={!isActivated ? "opacity-0 pointer-events-none" : ""}>
+          <div>
             <PromptInput
               value={promptInput}
               onChange={setPromptInput}
               onSubmit={handlePromptSubmit}
               isLoading={isLoading}
-              selectedStyle={
-                 selectedStyleId === "custom-style"
-                   ? (customStyle ? `Custom: ${customStyle}` : "Custom Style")
-                   : getLabelForId(selectedStyleId, TATTOO_STYLES)
-              }
-              onClearStyle={() => {
-                setSelectedStyleId(null);
-                setCustomStyle(null);
-              }}
+              selectedStyle={getLabelForId(selectedStyleId, TATTOO_STYLES)}
+              onClearStyle={() => setSelectedStyleId(null)}
               selectedColor={getLabelForId(selectedColorId, TATTOO_COLORS)}
               onClearColor={() => setSelectedColorId(null)}
-              selectedRatio={getLabelForId(selectedRatioId, TATTOO_RATIOS)}
-              onClearRatio={() => setSelectedRatioId(null)}
+              selectedRatio={null}
+              onClearRatio={() => {}}
             />
           </div>
         </div>
         <div className="mt-2 space-y-4">
-          {/* Always-rendered Style carousel */}
+          {/* Always-rendered Style carousel (16 styles + premium + repeated premium for infinite feel) */}
           <StyleCarousel
             visible={true}
-            options={TATTOO_STYLES}
+            options={styleOptionsWithInfinitePremium}
             onSelect={(option) => {
               setSelectedStyleId(option.id);
             }}
@@ -195,32 +210,19 @@ export function ImagePlayground({}: {}) {
             emptyMessage="No styles available."
           />
 
-          {/* Always-rendered Vibe carousel (colors + ratios) below style */}
+          {/* Color options only (B&W, Full Color, Custom) – center-aligned, liquid metal cards, click-to-highlight */}
           <StyleCarousel
             visible={true}
-            options={vibeOptions}
+            options={colorOptions}
             onSelect={(option) => {
-              // Vibe logic: clearly distinguish using the 'group' property
-              if (option.group === "color") {
-                setSelectedColorId(option.id);
-              } else if (option.group === "ratio") {
-                setSelectedRatioId(option.id);
-              }
+              if (option.group === "color") setSelectedColorId(option.id);
             }}
-            selected={[selectedColorId, selectedRatioId].filter((s): s is string => !!s)}
-            emptyMessage="No vibes available."
+            selected={selectedColorId}
+            centerAlign
+            emptyMessage="No options available."
           />
         </div>
 
-        <CustomStyleInput
-          isVisible={selectedStyleId === "custom-style"}
-          onSubmit={(style) => setCustomStyle(style)}
-        />
-        
-        <CustomStyleInput
-          isVisible={selectedColorId === "custom-color"}
-          onSubmit={(color) => setCustomColor(color)}
-        />
         <div className="flex justify-center my-20 py-12 relative z-10">
           <div className={isLoading ? "opacity-50 pointer-events-none scale-[1.75] origin-center" : "scale-[1.75] origin-center"}>
             <LiquidMetalButton

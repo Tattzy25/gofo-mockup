@@ -54,26 +54,38 @@ export function ImageCarousel(props: Readonly<ImageCarouselProps>) {
             )?.image;
             const timing = timings[provider];
 
+            const isSelected = i === currentSlide;
+
             return (
               <CarouselItem key={provider}>
-                <LiquidMetalCard
-                  speed={0.6}
-                  className="w-full aspect-square p-[3px] rounded-xl"
+                <div
+                  className={cn(
+                    "relative w-full aspect-square rounded-xl overflow-hidden transition-all duration-200 border-[4px] border-transparent",
+                    isSelected
+                      ? "border-[#e879f9] ring-[4px] ring-[#e879f9] ring-offset-4 ring-offset-black shadow-[0_0_30px_rgba(232,121,249,0.9)] scale-[1.02]"
+                      : ""
+                  )}
+                  data-selected={isSelected ? "true" : undefined}
                 >
-                  <div className="relative w-full h-full rounded-[calc(0.75rem-3px)] overflow-hidden">
-                    <ImageDisplay
-                      modelId={
-                        images?.find((img) => img.provider === provider)?.modelId ||
-                        providerToModel[provider]
-                      }
-                      provider={provider}
-                      image={imageData}
-                      timing={timing}
-                      failed={failedProviders.includes(provider)}
-                      enabled={enabledProviders[provider]}
-                    />
-                  </div>
-                </LiquidMetalCard>
+                  <LiquidMetalCard
+                    speed={0.6}
+                    className="w-full h-full p-[3px] rounded-[calc(1rem-1px)]"
+                  >
+                    <div className="relative w-full h-full rounded-[calc(1rem-2px)] overflow-hidden">
+                      <ImageDisplay
+                        modelId={
+                          images?.find((img) => img.provider === provider)?.modelId ||
+                          providerToModel[provider]
+                        }
+                        provider={provider}
+                        image={imageData}
+                        timing={timing}
+                        failed={failedProviders.includes(provider)}
+                        enabled={enabledProviders[provider]}
+                      />
+                    </div>
+                  </LiquidMetalCard>
+                </div>
                 <div className="text-center text-sm text-muted-foreground mt-4">
                   {i + 1} of {providers.length}
                 </div>

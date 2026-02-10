@@ -18,7 +18,11 @@ export interface TattooOption {
   id: string;
   label: string;
   value: string; // The value sent to the API
-  imageUrl: string;
+  /**
+   * UI preview image for the option.
+   * NOTE: In the mockup we populate this dynamically from Pexels, so it may be null/undefined at first render.
+   */
+  imageUrl?: string | null;
   isCustom?: boolean;
   group: "style" | "color" | "ratio" | "divider";
 }

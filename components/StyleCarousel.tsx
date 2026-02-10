@@ -5,6 +5,47 @@ import Image from "next/image";
 import { LiquidMetalCard } from "@/components/ui/liquid-metal-card";
 import { TattooOption } from "@/lib/api-types";
 
+const SUBSCRIBE_URL = "/subscribe";
+
+/** Premium card: same liquid metal wrapper as style/color cards, art background + Subscribe Now CTA */
+function PremiumCard() {
+  return (
+    <div
+      className="flex flex-shrink-0 w-48 flex flex-col items-center gap-3"
+      aria-hidden
+    >
+      <div
+        className="relative w-48 aspect-[4/5] rounded-lg overflow-hidden"
+        style={{
+          boxShadow:
+            "0px 0px 0px 1px rgba(0, 0, 0, 0.3), 0px 36px 14px 0px rgba(0, 0, 0, 0.02), 0px 20px 12px 0px rgba(0, 0, 0, 0.08), 0px 9px 9px 0px rgba(0, 0, 0, 0.12), 0px 2px 5px 0px rgba(0, 0, 0, 0.15)",
+          transition: "box-shadow 0.15s cubic-bezier(0.4, 0, 0.2, 1)",
+        }}
+      >
+        <LiquidMetalCard speed={0.25} className="w-full h-full !p-0 rounded-xl">
+          <div className="relative w-full h-full rounded-[calc(1rem-1px)] overflow-hidden">
+            <Image
+              src="/PremiumCard.png"
+              alt="Premium"
+              fill
+              sizes="192px"
+              className="object-cover"
+            />
+            <div className="absolute inset-0 bg-black/35 flex flex-col justify-end p-2">
+              <a
+                href={SUBSCRIBE_URL}
+                className="font-orbitron w-full py-2.5 rounded-full bg-white text-black font-bold text-sm text-center tracking-wide hover:bg-neutral-100 transition-colors shadow-lg"
+              >
+                Subscribe Now
+              </a>
+            </div>
+          </div>
+        </LiquidMetalCard>
+      </div>
+    </div>
+  );
+}
+
 interface CarouselItemProps {
   option: TattooOption;
   isSelected: boolean;
@@ -58,17 +99,23 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
         }}
       >
         <LiquidMetalCard
-          speed={isSelected || isHovered ? 0.6 : 0}
-          className="w-full h-full p-[3px] rounded-xl"
+          speed={isSelected || isHovered ? 0.6 : 0.25}
+          className="w-full h-full !p-0 rounded-xl"
         >
-          <div className="relative w-full h-full rounded-[calc(1rem-1px)] overflow-hidden">
-            <Image
-              src={option.imageUrl}
-              alt={option.label}
-              fill
-              sizes="(min-width: 1024px) 160px, 128px"
-              className="object-cover"
-            />
+          <div className="relative w-full h-full rounded-[calc(1rem-1px)] overflow-hidden bg-muted">
+            {option.imageUrl ? (
+              <Image
+                src={option.imageUrl}
+                alt={option.label}
+                fill
+                sizes="(min-width: 1024px) 160px, 128px"
+                className="object-cover"
+              />
+            ) : (
+              <div className="absolute inset-0 flex items-center justify-center text-muted-foreground text-xs font-medium">
+                {option.label || "—"}
+              </div>
+            )}
           </div>
         </LiquidMetalCard>
       </div>
@@ -84,12 +131,12 @@ function CarouselItem({ option, isSelected, onClick, selectedClassName }: Carous
 
 interface StyleCarouselProps {
   visible?: boolean;
-  options?: TattooOption[]; // Changed from images: string[]
+  options?: TattooOption[];
   onSelect?: (option: TattooOption) => void;
-  /** Optional externally-controlled selected option ID(s) */
   selected?: string | string[] | null;
-  /** Optional class applied to a selected item */
   selectedClassName?: string;
+  /** Center the row (e.g. for few color options) */
+  centerAlign?: boolean;
   emptyMessage?: string;
 }
 
@@ -99,6 +146,7 @@ export function StyleCarousel({
   onSelect,
   selected,
   selectedClassName,
+  centerAlign = false,
   emptyMessage,
 }: Readonly<StyleCarouselProps>) {
   const [internalSelected, setInternalSelected] = React.useState<string | null>(null);
@@ -116,12 +164,16 @@ export function StyleCarousel({
   }
 
   return (
-    <div className="mt-4 w-full">
-      <div className="overflow-x-auto hide-scrollbar">
-        {/* Center the carousel contents while keeping horizontal scroll on small screens */}
-        <div className="flex justify-center gap-6 px-2 sm:px-4 py-[10px]">
-          {options.map((option, idx) => {
-        
+    <div className="mt-4 w-full min-w-0">
+      <div className="scroll-touch-x hide-scrollbar scroll-smooth w-full">
+        {/* Single row, horizontal scroll on all breakpoints (mobile + desktop) */}
+        <div
+          className={`flex flex-nowrap gap-4 md:gap-6 px-2 sm:px-4 py-[10px] w-max min-w-full ${centerAlign ? "justify-center" : ""}`}
+        >
+          {options.map((option, index) => {
+            if (option.id === "premium") {
+              return <PremiumCard key={`premium-${index}`} />;
+            }
 
             const selectedIds = selected ?? internalSelected;
 

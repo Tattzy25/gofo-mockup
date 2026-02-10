@@ -1,9 +1,0 @@
-{
-	"servers": {
-		"Tavily": {
-			"url": "https://mcp.tavily.com/mcp/?tavilyApiKey=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",
-			"type": "http"
-		}
-	},
-	"inputs": []
-}

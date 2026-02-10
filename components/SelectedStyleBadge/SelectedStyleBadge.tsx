@@ -1,6 +1,5 @@
 import React from "react";
 import { LiquidMetalButton } from "@/components/ui/liquid-metal-button";
-import { getStyleLabel } from "@/lib/utils";
 
 interface SelectedStyleBadgeProps {
   selectedStyle: string;

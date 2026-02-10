@@ -14,6 +14,13 @@
   .hide-scrollbar::-webkit-scrollbar {
     display: none; /* Safari and Chrome */
   }
+  /* horizontal scroll that works on touch devices (e.g. mobile) */
+  .scroll-touch-x {
+    -webkit-overflow-scrolling: touch;
+    touch-action: pan-x;
+    overflow-x: auto;
+    overflow-y: hidden;
+  }
 }
 
 @layer base {

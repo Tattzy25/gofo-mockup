@@ -1,7 +1,8 @@
 {
-  "name": "ai-sdk-image-generator",
+  "name": "tattty-widget",
   "version": "0.1.0",
   "private": true,
+  "description": "Tattty tattoo image generator widget for https://widget.tattty.com",
   "scripts": {
     "dev": "next dev",
     "build": "next build",

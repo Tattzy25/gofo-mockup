@@ -5,22 +5,14 @@ export const TATTOO_COLORS: TattooOption[] = [
     id: "black-white",
     label: "Black & White",
     value: "Black",
-    imageUrl: "/black-and-white.png",
+    imageUrl: "/B%26W.png",
     group: "color"
   },
   {
     id: "colorful",
-    label: "Colorful",
+    label: "Full Color",
     value: "Colorful",
-    imageUrl: "/colorful.png",
-    group: "color"
-  },
-  {
-    id: "custom-color",
-    label: "Custom Color",
-    value: "Custom",
-    imageUrl: "/custom.png",
-    isCustom: true,
+    imageUrl: "/FULLCOLOR.png",
     group: "color"
   }
 ];
