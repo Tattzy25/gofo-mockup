@@ -41,7 +41,7 @@ export function PromptInput({
         onKeyDown={handleKeyDown}
         placeholder="Don't overthink it, just be yourself"
         rows={3}
-        className="text-[22px] md:text-[22px] bg-transparent border border-[var(--input)] rounded-md p-2 resize-none placeholder:text-[var(--muted-foreground)] text-[var(--foreground)] focus-visible:ring-2 focus-visible:ring-[var(--ring)] focus-visible:ring-offset-0"
+        className="text-[22px] md:text-[22px] bg-transparent border border-black rounded-md p-2 resize-none placeholder:text-[var(--muted-foreground)] text-[var(--foreground)] ring-1 ring-black ring-inset focus-visible:ring-2 focus-visible:ring-black focus-visible:ring-offset-0"
       />
       <div className="flex flex-wrap items-center justify-center gap-8 pt-1 pb-[10px]">
         {onSelectColor && (
@@ -50,7 +50,7 @@ export function PromptInput({
               type="button"
               onClick={() => onSelectColor("black-white")}
               className={cn(
-                "rounded-full transition-all ring-offset-2 ring-offset-[var(--background)]",
+                "w-full sm:w-auto rounded-full transition-all ring-offset-2 ring-offset-[var(--background)]",
                 selectedColorId === "black-white"
                   ? "ring-2 ring-black"
                   : "ring-0",
@@ -63,13 +63,14 @@ export function PromptInput({
                 viewMode="text"
                 animate={true}
                 interactive={false}
+                fullWidth={true}
               />
             </button>
             <button
               type="button"
               onClick={() => onSelectColor("colorful")}
               className={cn(
-                "rounded-full transition-all ring-offset-2 ring-offset-[var(--background)]",
+                "w-full sm:w-auto rounded-full transition-all ring-offset-2 ring-offset-[var(--background)]",
                 selectedColorId === "colorful"
                   ? "ring-2 ring-black"
                   : "ring-0",
@@ -82,6 +83,7 @@ export function PromptInput({
                 viewMode="text"
                 animate={true}
                 interactive={false}
+                fullWidth={true}
               />
             </button>
           </>

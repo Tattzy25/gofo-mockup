@@ -15,6 +15,7 @@ interface LiquidMetalButtonProps {
   height?: number
   textSize?: number
   textFontFamily?: string
+  fullWidth?: boolean
 }
 
 export function LiquidMetalButton({
@@ -28,13 +29,16 @@ export function LiquidMetalButton({
   height,
   textSize,
   textFontFamily,
+  fullWidth = false,
 }: LiquidMetalButtonProps) {
   const [isHovered, setIsHovered] = useState(false)
   const [isPressed, setIsPressed] = useState(false)
   const [ripples, setRipples] = useState<Array<{ x: number; y: number; id: number }>>([])
+  const [measuredWidth, setMeasuredWidth] = useState<number | null>(null)
   const shaderRef = useRef<HTMLDivElement>(null)
   const shaderMount = useRef<any>(null)
   const buttonRef = useRef<HTMLButtonElement>(null)
+  const rootRef = useRef<HTMLDivElement>(null)
   const rippleId = useRef(0)
 
   const dimensions = useMemo(() => {
@@ -48,7 +52,9 @@ export function LiquidMetalButton({
         shaderHeight: 46,
       }
     } else {
-      const textWidth = width ?? 142
+      const textWidth = fullWidth
+        ? Math.max(142, Math.round(measuredWidth ?? width ?? 142))
+        : (width ?? 142)
       const textHeight = height ?? 46
       return {
         width: textWidth,
@@ -59,7 +65,20 @@ export function LiquidMetalButton({
         shaderHeight: textHeight,
       }
     }
-  }, [viewMode, width, height])
+  }, [viewMode, width, height, fullWidth, measuredWidth])
+
+  useEffect(() => {
+    if (!fullWidth || !rootRef.current) return
+    const node = rootRef.current
+    const update = () => {
+      const next = Math.round(node.getBoundingClientRect().width)
+      if (next > 0) setMeasuredWidth(next)
+    }
+    update()
+    const observer = new ResizeObserver(update)
+    observer.observe(node)
+    return () => observer.disconnect()
+  }, [fullWidth])
 
   useEffect(() => {
     const styleId = "shader-canvas-style-exploded"
@@ -175,7 +194,10 @@ export function LiquidMetalButton({
   }
 
   return (
-    <div className="relative inline-block">
+    <div
+      ref={rootRef}
+      className={fullWidth ? "relative block w-full" : "relative inline-block"}
+    >
       <div
         style={{
           perspective: "1000px",
@@ -376,11 +398,6 @@ export function LiquidMetalButton({
           ) : (
             <div
               aria-hidden="true"
-              onClick={handleClick}
-              onMouseEnter={handleMouseEnter}
-              onMouseLeave={handleMouseLeave}
-              onMouseDown={() => setIsPressed(true)}
-              onMouseUp={() => setIsPressed(false)}
               style={{
                 position: "absolute",
                 top: 0,
@@ -394,7 +411,7 @@ export function LiquidMetalButton({
                 transition: "all 0.8s cubic-bezier(0.34, 1.56, 0.64, 1), width 0.4s ease, height 0.4s ease",
                 overflow: "hidden",
                 borderRadius: "100px",
-                cursor: "pointer",
+                pointerEvents: "none",
               }}
             />
           )}
